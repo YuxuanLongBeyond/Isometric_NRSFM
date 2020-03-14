@@ -65,6 +65,14 @@ if method.method == 1
     C = diag(I1u) * S1 + diag(I1v) * S2; 
     A = S1' * L * S1 + S2' * L * S2 + C' * L * C;
     V =  ((tao * (B)' * B + A) \ (B' * ones(n, 1))) * tao;
+
+%     lambda = 0.1;
+%     V = ones(size(A, 1), 1) * Inf;
+%     for i = 1:10
+%         tem = [A B'; B zeros(n, n)] \ [lambda ./ V;ones(n, 1)];
+%         V = tem(1:size(A, 1));
+%     end
+    
     cum_index = cumsum(index_list);
     j = 0;
     for i = 1:n

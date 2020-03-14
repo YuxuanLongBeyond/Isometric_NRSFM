@@ -105,15 +105,17 @@ I1u_all = repmat(I1u, 6, 1); I1v_all = repmat(I1v, 6, 1);
 % on the first view
 k1 = J12a_all .* x1 + J12b_all .* x2;
 k2 = J12c_all .* x1 + J12d_all .* x2;
-n3 = 1 - k1 .* I1u_all - k2 .* I1v_all;
-mask = n3 < 0; % the normal should point outwards
-n3(mask) = NaN;
-k1(mask) = NaN; k2(mask) = NaN; 
-x1(mask) = NaN; x2(mask) = NaN; 
 
 % on the second view
 k1_ = x1 + repmat(t1, 6, 1);
 k2_ = x2 + repmat(t2, 6, 1);
+
+n3 = 1 - k1 .* I1u_all - k2 .* I1v_all;
+n3_ = 1 - k1_ .* repmat(I2u, 6, 1) - k2_ .* repmat(I2v, 6, 1);
+mask = (n3 < 0) | (n3_ < 0); % the normal should point outwards under visible condition
+n3(mask) = NaN;
+k1(mask) = NaN; k2(mask) = NaN; 
+x1(mask) = NaN; x2(mask) = NaN; 
 
 
 % solution selection by methods:
