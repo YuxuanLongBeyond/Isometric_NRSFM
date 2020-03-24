@@ -1,4 +1,4 @@
-function [mask, k1, k2, k1_, k2_] = solution_selection(I1u, I1v, I2u, I2v, k1, k2, k1_, k2_, method)
+function mask = solution_selection(I1u, I1v, I2u, I2v, k1, k2, k1_, k2_, method)
 n = length(I1u);
 mask = zeros(6, n);
 if method.method == 0
@@ -153,10 +153,10 @@ if method.method == 1
 %         grad = A * V;
 %         V = V - alpha * grad;
 %     end
-    k1 = S1 * V;
-    k2 = S2 * V;
-    k1_ = S1_ * V;
-    k2_ = S2_ * V;    
+%     k1 = S1 * V;
+%     k2 = S2 * V;
+%     k1_ = S1_ * V;
+%     k2_ = S2_ * V;    
 
     cum_index = cumsum(index_list);
     j = 0;
