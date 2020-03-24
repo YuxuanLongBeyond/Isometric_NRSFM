@@ -26,9 +26,9 @@ addpath(genpath('schwarps'));
 %%% GROUND TRUTH NORMALS %%%%%
 % Ngth = create_gth_normals(Pgth,q_n,num);
 
-%%% PARAMETERS %%%%%
-par = 2e-3; % schwarzian parameter.. needs to be tuned (usually its something close to 1e-3)
-grid = 0;
+% %%% PARAMETERS %%%%%
+% par = 2e-3; % schwarzian parameter.. needs to be tuned (usually its something close to 1e-3)
+% grid = 0;
 
 %%%%% GRID OF POINTS %%%%
 % if grid %max(sum(visb)) == num
@@ -45,13 +45,23 @@ grid = 0;
 % [I1u,I1v,I2u,I2v,J21a,J21b,J21c,J21d,J12a,J12b,J12c,J12d,H21uua,H21uub,H21uva,H21uvb,H21vva,H21vvb] = create_warps(I1u,I1v,I2u,I2v,visb,par);
 % create schwarzian warps for the dataset
 
-load('warps.mat')
-
-
-num = 2;
+% load('Kinect_paper.mat')
+load('warps_tshirt.mat')
 
 % select one view
-view_id = 10; % from 1 to 10
+view_id = 2; % from 1 to 10
+
+% solution selection by methods:
+method = struct;
+% method.method = 0; % select the solution by seeking the minimum absolute value
+method.method = 1; % select the solution by exploring the graph Laplacian
+method.sigma = 1;
+method.ratio = 1; % threshold = ratio * average squared distance
+method.solver = 'qp1'; % no inequality constraint
+% method.solver = 'qp2'; % with inequality constraint
+% method.solver = 'admm'; % with l1 penalty (to replace inequality constraint)
+
+num = 2;
 
 % keep only the first view and another view
 H21uua = H21uua(view_id - 1, :);
@@ -74,7 +84,7 @@ J21c = J21c(view_id - 1, :);
 J21d = J21d(view_id - 1, :);
 Ngth = [Ngth(1:3, :); Ngth((view_id * 3 - 2):(view_id * 3), :)];
 Pgth = [Pgth(1:3, :); Pgth((view_id * 3 - 2):(view_id * 3), :)];
-q_n = [q_n(1:2, :); q_n((view_id * 2 - 1):(view_id * 2), :)];
+q_n = [qgth{1}(1:2, :); qgth{view_id}(1:2, :)];
 
 % Christoffel Symbols (see equation 15 in the paper)
 %T1 = [-2*k1 -k2;-k2 0];
@@ -110,23 +120,13 @@ k2 = J12c_all .* x1 + J12d_all .* x2;
 k1_ = x1 + repmat(t1, 6, 1);
 k2_ = x2 + repmat(t2, 6, 1);
 
-n3 = 1 - k1 .* I1u_all - k2 .* I1v_all;
-n3_ = 1 - k1_ .* repmat(I2u, 6, 1) - k2_ .* repmat(I2v, 6, 1);
-mask = (n3 < 0) | (n3_ < 0); % the normal should point outwards under visible condition
-n3(mask) = NaN;
-k1(mask) = NaN; k2(mask) = NaN; 
-x1(mask) = NaN; x2(mask) = NaN; 
+% n3 = 1 - k1 .* I1u_all - k2 .* I1v_all;
+% n3_ = 1 - k1_ .* repmat(I2u, 6, 1) - k2_ .* repmat(I2v, 6, 1);
+% mask = (n3 < 0) | (n3_ < 0); % the normal should point outwards under visible condition
+% k1(mask) = NaN; k2(mask) = NaN; 
+% x1(mask) = NaN; x2(mask) = NaN; 
 
-
-% solution selection by methods:
-method = struct;
-% method.method = 0; % select the solution by seeking the minimum absolute value
-method.method = 1; % select the solution by exploring the graph Laplacian
-method.sigma = 0.1;
-method.ratio = 0.1; % threshold = ratio * average squared distance
-method.tao = 0.01;
-mask = solution_selection(I1u, I1v, I2u, I2v, k1, k2, method);
-
+mask = solution_selection(I1u, I1v, I2u, I2v, k1, k2, k1_, k2_, method);
 k1_all = [k1(mask)'; k1_(mask)'];
 k2_all = [k2(mask)'; k2_(mask)'];
 % idx = find(visb(1,:)==0);

@@ -1,4 +1,4 @@
-function [eq, f1, f2] = create_cubic_coefficients(a,b,c,d,t1,t2,e_,e,u_,u,v_,v)
+function [eq, f1, f2, r] = create_cubic_coefficients(a,b,c,d,t1,t2,e_,e,u_,u,v_,v)
 % on the reference view: e, u, v
 % on another view: e_, u_, v_
 
@@ -37,5 +37,5 @@ q6 =  r6.*p1.*p6 + r5.*p2.^2 - r6.*p2.*p5 - r3.*p2.*p6 + 2.*r7.*p5.*p6 + r4.*p6.
 eq = [q0; q1; q2; q3; q4; q5; q6];
 f1 = [p0; p1; p2];
 f2 = [p3; p4; p5; p6];
-
+r = [r0; r1; r2; r3; r4; r5; r6; r7];
 end
