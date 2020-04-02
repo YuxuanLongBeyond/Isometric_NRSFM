@@ -46,21 +46,26 @@ addpath(genpath('schwarps'));
 % create schwarzian warps for the dataset
 
 % load('Kinect_paper.mat')
-load('warps_tshirt.mat')
+% load('warps_tshirt.mat')
+% load('warps_plane_vertical.mat')
+% load('warps_plane_horizontal.mat')
+load('warps_cylinder.mat')
 
 % select one view
-view_id = 2; % from 1 to 10
+view_id = 3; % from 1 to 10
 
 % solution selection by methods:
 method = struct;
 % method.method = 0; % select the solution by seeking the minimum absolute value
 method.method = 1; % select the solution by exploring the graph Laplacian
+% method.method = 3;
 method.sigma = 1;
 method.ratio = 1; % threshold = ratio * average squared distance
 method.solver = 'qp1'; % no inequality constraint
 % method.solver = 'qp2'; % with inequality constraint
 % method.solver = 'admm'; % with l1 penalty (to replace inequality constraint)
 
+% method.solver = 'irqp'; 
 num = 2;
 
 % keep only the first view and another view
@@ -125,7 +130,6 @@ k2_ = x2 + repmat(t2, 6, 1);
 % mask = (n3 < 0) | (n3_ < 0); % the normal should point outwards under visible condition
 % k1(mask) = NaN; k2(mask) = NaN; 
 % x1(mask) = NaN; x2(mask) = NaN; 
-
 mask = solution_selection(I1u, I1v, I2u, I2v, k1, k2, k1_, k2_, method);
 k1_all = [k1(mask)'; k1_(mask)'];
 k2_all = [k2(mask)'; k2_(mask)'];
@@ -166,7 +170,7 @@ for i=1:size(u_all,1)
       %quiver3(P2(3*(i-1)+1,:),P2(3*(i-1)+2,:),P2(3*(i-1)+3,:),N(3*(i-1)+1,:),N(3*(i-1)+2,:),N(3*(i-1)+3,:));
       %quiver3(Pgth(3*(i-1)+1,:),Pgth(3*(i-1)+2,:),Pgth(3*(i-1)+3,:),Ngth(3*(i-1)+1,:),Ngth(3*(i-1)+2,:),Ngth(3*(i-1)+3,:));
     hold off;
-    axis equal;
+%     axis equal;
 end
 mean(err_p')
 mean(err_n')

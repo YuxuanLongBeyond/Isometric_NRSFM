@@ -13,7 +13,10 @@ addpath(genpath('schwarps'));
 
 
 % dataset = 'Kinect_paper.mat';
-dataset = 'warps_tshirt.mat';
+% dataset = 'warps_tshirt.mat';
+% dataset = 'warps_plane_vertical.mat';
+% dataset = 'warps_plane_horizontal.mat';
+dataset = 'warps_cylinder.mat';
 
 method = struct;
 
@@ -21,6 +24,8 @@ method = struct;
 method.method = 0; % (local approach) select the solution by seeking the least l2 norm
 % method.method = 1; % (global approach) select the solution by exploring the graph Laplacian
 % method.method = 2; % select the least median (not a two-view method)
+% method.method = 3;
+% method.solver = 'irqp'; 
 
 %%% parameters for constructing the Laplacian
 method.sigma = 1;
@@ -30,8 +35,9 @@ method.ratio = 1; % threshold = ratio * average squared distance
 method.solver = 'qp1'; % no inequality constraint, we just solve KKT equation
 % method.solver = 'qp2'; % with inequality constraint
 % method.solver = 'admm'; % with l1 penalty (to replace inequality constraint)
+% method.solver = 'irqp'; 
 
-err = 1e-10; % tolerance for imaginary part 
+err = 1e-20; % tolerance for imaginary part 
 %%% (if a number's imaginary part is greater than err, then it's deemed as complex number)
 
 
@@ -108,10 +114,17 @@ for view_id = 2:(1 + pairs_num)
     % on the first view
     k1 = J12a_all .* x1 + J12b_all .* x2;
     k2 = J12c_all .* x1 + J12d_all .* x2;
-
+    
     % on the second view
     k1_ = x1 + repmat(t_all{view_id - 1}(1, :), 6, 1);
     k2_ = x2 + repmat(t_all{view_id - 1}(2, :), 6, 1);
+    
+%     I1u_all = repmat(I1u, 6, 1); I1v_all = repmat(I1v, 6, 1);
+%     I2u_all = repmat(I2u_tem, 6, 1); I2v_all = repmat(I2v_tem, 6, 1);    
+%     k3 = 1 - I1u_all .* k1 - I1v_all .* k2;
+%     k3_ = 1 - I2u_all .* k1_ - I2v_all .* k2_;
+%     mask = (k3 < 0) | (k3_ < 0);
+%     k1(mask) = NaN; k1_(mask) = NaN; k2(mask) = NaN; k2_(mask) = NaN;
     
     % compute the mask for selecting the desirable solutions
     mask = solution_selection(I1u, I1v, I2u_tem, I2v_tem, k1, k2, k1_, k2_, method);
