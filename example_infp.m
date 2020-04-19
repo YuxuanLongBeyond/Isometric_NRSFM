@@ -62,15 +62,13 @@ view_id = 10; % from 1 to 10
 % solution selection by methods:
 method = struct;
 % method.method = 0; % select the solution by seeking the minimum absolute value
-% method.method = 1; % select the solution by exploring the graph Laplacian
-method.method = 4;
+method.method = 1; % select the solution by exploring the graph Laplacian
+% method.method = 2; % select by least median
+
 method.sigma = 0.2;
 method.ratio = 1.0; % threshold = ratio * average squared distance
-% method.solver = 'qp1'; % no inequality constraint
-% method.solver = 'qp2'; % with inequality constraint
 method.solver = 'admm'; % with l1 penalty (to replace inequality constraint)
 
-% method.solver = 'irqp'; 
 num = 2;
 
 % keep only the first view and another view
