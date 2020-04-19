@@ -11,7 +11,7 @@ addpath(genpath('gloptipoly3'));
 addpath(genpath('SeDuMi_1_3'));
 addpath(genpath('schwarps'));
 addpath(genpath('sparseinv'));
-
+addpath(genpath('utils'));
 % dataset = 'Kinect_paper.mat';
 % dataset = 'warps_tshirt.mat';
 % dataset = 'warps_plane_vertical.mat';

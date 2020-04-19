@@ -10,7 +10,7 @@ addpath('SfTv0_3');
 addpath(genpath('gloptipoly3'));
 addpath(genpath('SeDuMi_1_3'));
 addpath(genpath('schwarps'));
-
+addpath(genpath('utils'));
 %%%% INPUTS %%%%%
 % load tshirt.mat
 
