@@ -10,31 +10,36 @@ addpath('SfTv0_3');
 addpath(genpath('gloptipoly3'));
 addpath(genpath('SeDuMi_1_3'));
 addpath(genpath('schwarps'));
-
+addpath(genpath('sparseinv'));
 
 % dataset = 'Kinect_paper.mat';
 % dataset = 'warps_tshirt.mat';
 % dataset = 'warps_plane_vertical.mat';
 % dataset = 'warps_plane_horizontal.mat';
-dataset = 'warps_cylinder.mat';
+% dataset = 'warps_cylinder.mat';
+dataset = 'warps_cylinder_new1.mat';
+% dataset = 'warps_cylinder_new2.mat';
 
+
+dataset = ['./warps_data/', dataset];
 method = struct;
 
 %%% solution selection by methods:
-method.method = 0; % (local approach) select the solution by seeking the least l2 norm
+% method.method = 0; % (local approach) select the solution by seeking the least l2 norm
 % method.method = 1; % (global approach) select the solution by exploring the graph Laplacian
 % method.method = 2; % select the least median (not a two-view method)
 % method.method = 3;
+method.method = 4;
 % method.solver = 'irqp'; 
 
 %%% parameters for constructing the Laplacian
-method.sigma = 1;
-method.ratio = 1; % threshold = ratio * average squared distance
+method.sigma = 0.2;
+method.ratio = 1.0; % threshold = ratio * average squared distance
 
 %%% choose one solver for global approach (only if method = 1)
-method.solver = 'qp1'; % no inequality constraint, we just solve KKT equation
+% method.solver = 'qp1'; % no inequality constraint, we just solve KKT equation
 % method.solver = 'qp2'; % with inequality constraint
-% method.solver = 'admm'; % with l1 penalty (to replace inequality constraint)
+method.solver = 'admm'; % with l1 penalty (to replace inequality constraint)
 % method.solver = 'irqp'; 
 
 err = 1e-20; % tolerance for imaginary part 

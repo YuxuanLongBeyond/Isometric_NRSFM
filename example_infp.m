@@ -45,25 +45,30 @@ addpath(genpath('schwarps'));
 % [I1u,I1v,I2u,I2v,J21a,J21b,J21c,J21d,J12a,J12b,J12c,J12d,H21uua,H21uub,H21uva,H21uvb,H21vva,H21vvb] = create_warps(I1u,I1v,I2u,I2v,visb,par);
 % create schwarzian warps for the dataset
 
-% load('Kinect_paper.mat')
-% load('warps_tshirt.mat')
-% load('warps_plane_vertical.mat')
-% load('warps_plane_horizontal.mat')
-load('warps_cylinder.mat')
+% dataset = 'Kinect_paper.mat';
+% dataset = 'warps_tshirt.mat';
+% dataset = 'warps_plane_vertical.mat';
+% dataset = 'warps_plane_horizontal.mat';
+% dataset = 'warps_cylinder.mat';
+dataset = 'warps_cylinder_new1.mat';
+% dataset = 'warps_cylinder_new2.mat';
+
+dataset = ['./warps_data/', dataset];
+load(dataset);
 
 % select one view
-view_id = 3; % from 1 to 10
+view_id = 10; % from 1 to 10
 
 % solution selection by methods:
 method = struct;
 % method.method = 0; % select the solution by seeking the minimum absolute value
-method.method = 1; % select the solution by exploring the graph Laplacian
-% method.method = 3;
-method.sigma = 1;
-method.ratio = 1; % threshold = ratio * average squared distance
-method.solver = 'qp1'; % no inequality constraint
+% method.method = 1; % select the solution by exploring the graph Laplacian
+method.method = 4;
+method.sigma = 0.2;
+method.ratio = 1.0; % threshold = ratio * average squared distance
+% method.solver = 'qp1'; % no inequality constraint
 % method.solver = 'qp2'; % with inequality constraint
-% method.solver = 'admm'; % with l1 penalty (to replace inequality constraint)
+method.solver = 'admm'; % with l1 penalty (to replace inequality constraint)
 
 % method.solver = 'irqp'; 
 num = 2;

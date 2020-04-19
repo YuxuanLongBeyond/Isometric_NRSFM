@@ -4,7 +4,7 @@ close all
 n = 10;
 rmin = 2;
 rmax = 11;
-
+rot_angle = 0.5;
 
 u = linspace(-pi/2,pi/2,20);%-1*pi/4:0.30:pi/4;
 u = repmat(u,length(u),1);
@@ -26,9 +26,9 @@ for i=length(num):-1:1
     x1 =  r.*sin(u/r);
     z1 =  r.*cos(u/r);
     %plot3(x1(:),y(:),z1(:),'*r');
-    R{i}=rodrigues(1e-1*[rand,rand,rand]);
+    R{i}=rodrigues(rot_angle*[rand,rand,rand]);
     
-    Tr{i} =[0, 0, -r+3];
+    Tr{i} =[rand, rand, -r+3];
     P2{i}=R{i}*[x1(:), y(:),z1(:)]' + repmat(Tr{i}',1,length(x1(:)));
     dqu = R{i}*[(z1(:)./r)';(zeros(size(z1(:))))';(-x1(:)./r)'];
     dqv = R{i}*[(zeros(size(z1(:))))';(ones(size(z1(:))))';(zeros(size(z1(:))))'];
@@ -123,6 +123,6 @@ I1u_all = repmat(I1u, n - 1, 1);
 I1v_all = repmat(I1v, n - 1, 1);
 [I1u,I1v,I2u,I2v,J21a,J21b,J21c,J21d,J12a,J12b,J12c,J12d,H21uua,H21uub,H21uva,H21uvb,H21vva,H21vvb] = create_warps(I1u_all,I1v_all,I2u,I2v,visb,par);
 
-save('warps_cylinder.mat', 'H21uua', 'H21uub', 'H21uva', 'H21uvb', 'H21vva', 'H21vvb', ...
+save('warps_cylinder_new2.mat', 'H21uua', 'H21uub', 'H21uva', 'H21uvb', 'H21vva', 'H21vvb', ...
     'I1u', 'I1v', 'I2u', 'I2v', 'J21a', 'J21b', 'J21c', 'J21d', 'J12a', 'J12b', 'J12c', 'J12d', ...
     'Ngth', 'Pgth', 'qgth');
