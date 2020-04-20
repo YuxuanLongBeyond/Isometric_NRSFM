@@ -57,7 +57,7 @@ dataset = ['./warps_data/', dataset];
 load(dataset);
 
 % select one view
-view_id = 10; % from 1 to 10
+view_id = 4; % from 1 to 10
 
 % solution selection by methods:
 method = struct;

@@ -125,20 +125,38 @@ if method.method == 1
     R1_ = sparse(x_index, y_index, normal_mat_(1, :) ./ normal_mat_(3, :), n, m);
     R2_ = sparse(x_index, y_index, normal_mat_(2, :) ./ normal_mat_(3, :), n, m);
 
+    S3_plus = normal_mat(3, :);
+    S3_plus(S3_plus > 0) = 0;
+%     S3_plus(S3_plus < 0) = 1;
+    S3_plus = sparse(x_index, y_index, S3_plus, n, m);
+    
+    S3_plus_ = normal_mat_(3, :);
+    S3_plus_(S3_plus_ > 0) = 0;
+%     S3_plus_(S3_plus_ < 0) = 1;
+    S3_plus_ = sparse(x_index, y_index, S3_plus_, n, m);    
+    
     V0 = V0(1:m);   
 
-    A_original = S1' * L * S1 + S2' * L * S2 + S3' * L * S3;
-    loss = max(V0' * A_original * V0, 0);
+%     c0 = (norm(R1 * V0) ^ 2 + norm(R2 * V0) ^ 2) / n
+%     disp(V0' * (S1' * L * S1 + S2' * L * S2 + S3' * L * S3) * V0)
+%     disp(V0' * (S1_' * L_ * S1_ + S2_' * L_ * S2_ + S3_' * L_ * S3_) * V0)
+    c0 = 1.0;
     c1 = 1.0;
     c2 = 1.0;
+%     c2 = (norm(R1_ * V0) ^ 2 + norm(R2_ * V0) ^ 2) / n
     c3 = 1.0;
     
-    B = full(sparse(x_index, y_index, ones(1, m), n, m)); 
-    A = A_original + c1 * (R1' * R1 + R2' * R2); % regularization
-    A = A + c2 * (S1_' * L_ * S1_ + S2_' * L_ * S2_ + S3_' * L_ * S3_);
-    A = A + c3 * (R1_' * R1_ + R2_' * R2_);
+    c4 = 1.0;
     
+    B = full(sparse(x_index, y_index, ones(1, m), n, m)); 
+    A_original = c0 * (S1' * L * S1 + S2' * L * S2 + S3' * L * S3);
+    A = A_original + c2 * (S1_' * L_ * S1_ + S2_' * L_ * S2_ + S3_' * L_ * S3_);
+    
+    loss = max(V0' * A_original * V0, 0);
+    A = A + c1 * (R1' * R1 + R2' * R2); % regularization
+    A = A + c3 * (R1_' * R1_ + R2_' * R2_);
     A = A / n;
+    A = A + c4 * (S3_plus' * S3_plus + S3_plus_' * S3_plus_);
 
     % use L1 norm to replace the inequality constraint
     s = 0.1;
