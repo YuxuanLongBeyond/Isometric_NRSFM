@@ -169,7 +169,8 @@ if method.method == 1
 
     A = A + eye(m) * (tau - lam2);
 
-    invA = inv(A);
+    invA = A \ eye(m, m);
+%     invA = inv(A);
     BinvA = B * invA;
     BAB_inv_BA_inv = (BinvA * B') \ BinvA;
     C = invA - BinvA' * BAB_inv_BA_inv;

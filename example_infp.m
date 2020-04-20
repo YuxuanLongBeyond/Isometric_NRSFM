@@ -67,7 +67,6 @@ method.method = 1; % select the solution by exploring the graph Laplacian
 
 method.sigma = 0.2;
 method.ratio = 1.0; % threshold = ratio * average squared distance
-method.solver = 'admm'; % with l1 penalty (to replace inequality constraint)
 
 num = 2;
 

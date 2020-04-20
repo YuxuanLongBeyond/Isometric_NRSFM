@@ -34,9 +34,6 @@ method.method = 1; % (global approach) select the solution by exploring the grap
 method.sigma = 0.2;
 method.ratio = 1.0; % threshold = ratio * average squared distance
 
-%%% choose one solver for global approach (only if method = 1)
-method.solver = 'admm'; % with l1 penalty (to replace inequality constraint)
-
 err = 1e-20; % tolerance for imaginary part 
 %%% (if a number's imaginary part is greater than err, then it's deemed as complex number)
 
