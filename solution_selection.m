@@ -3,19 +3,49 @@ n = length(I1u);
 mask = zeros(6, n); % mask (boolean array) should indicate the most desirable real solution
 if method.method == 0
     I1u_all = repmat(I1u, 6, 1); I1v_all = repmat(I1v, 6, 1);
-%     I2u_all = repmat(I2u, 6, 1); I2v_all = repmat(I2v, 6, 1);
+    I2u_all = repmat(I2u, 6, 1); I2v_all = repmat(I2v, 6, 1);
 
     k3 = 1 - I1u_all .* k1 - I1v_all .* k2;
-%     k3_ = 1 - I2u_all .* k1_ - I2v_all .* k2_;
-    measure = (k1 ./ k3) .^ 2 + (k2 ./ k3) .^ 2;
-%     measure = measure + (k1_ ./ k3_) .^ 2 + (k2_ ./ k3_) .^ 2;
-    
+    k3_ = 1 - I2u_all .* k1_ - I2v_all .* k2_;
+
+    switch method.measure
+        case 'apap'
+            measure = (k1 ./ k3) .^ 2 + (k2 ./ k3) .^ 2;
+            if method.both_view
+                measure = measure + (k1_ ./ k3_) .^ 2 + (k2_ ./ k3_) .^ 2;
+            end
+        case 'ln'
+            measure = k1 .^ 2 + k2 .^ 2;
+            if method.both_view
+                measure = measure + k1_ .^ 2 + k2_ .^ 2;
+            end
+        case 'msa'
+            e = 1 + I1u_all .^ 2 + I1v_all .^ 2;
+            measure = (e .* k1 .^ 2 - 2 * I1u_all .* k1 + 1) .* (e .* k2 .^ 2 - 2 * I1v_all .* k2 + 1);
+            measure = abs(measure - (e .* k1 .* k2 - I1u_all .* k2 - I1v_all .* k1) .^ 2);
+            if method.both_view
+                e_ = 1 + I2u_all .^ 2 + I2v_all .^ 2;
+                measure = measure + abs((e_ .* k1_ .^ 2 - 2 * I2u_all .* k1_ + 1) .* (e_ .* k2_ .^ 2 - 2 * I2v_all .* k2_ + 1)...
+                    - (e_ .* k1_ .* k2_ - I2u_all .* k2_ - I2v_all .* k1_) .^ 2);
+            end
+        otherwise
+            %%% default to apap
+            measure = (k1 ./ k3) .^ 2 + (k2 ./ k3) .^ 2;
+            if method.both_view
+                measure = measure + (k1_ ./ k3_) .^ 2 + (k2_ ./ k3_) .^ 2;
+            end
+    end
+
+
     for i = 1:n
-        tem = measure(:, i);
-        tem = tem(~isnan(tem)); % only select the real roots
         % (note we have set the complex numbers as NaN)
-        % we choose the one with least norm
-        mask(:, i) = abs(measure(:, i)) == min(abs(tem));
+        % we choose the one with least value
+        tem = measure(:, i);
+        
+        if method.visb && any(k3(:, i) > 0)
+            tem = tem(k3(:, i) > 0);
+        end
+        mask(:, i) = measure(:, i) == min(tem);
     end
 end
 
@@ -31,13 +61,16 @@ if method.method == 1
 
     F1 = [I1u; I1v]; % image coordinates on first view
     F2 = [I2u; I2v]; % image coordinates on second view
+%     F = [F1; F2];
 
     % compute distance maps for image coordinates
     dist_map1 = zeros(n, n);
     dist_map2 = zeros(n, n);
+%     dist_map = zeros(n, n);
     for i = 1:n
         dist_map1(:, i) = sum((F1 - F1(:, i)) .^ 2);
         dist_map2(:, i) = sum((F2 - F2(:, i)) .^ 2);
+%         dist_map(:, i) = sum((F - F(:, i)) .^ 2);
     end
 
     % compute the adjacency matrix for first view
@@ -57,17 +90,30 @@ if method.method == 1
     W2(dist_mask2) = 0;
 
 %     spy(W1)
+%     avg_dist = sum(sum(dist_map)) / (n ^ 2 - n);
+%     thre = 0.02 * avg_dist;
+%     dist_mask = dist_map > thre;
+%     W = exp(-dist_map / (2 * 0.1 ^ 2));
+%     W = W - eye(n);
+%     W(dist_mask) = 0;
+
 
     % compute the graph Laplacians (unormalized form)
     L = diag(sum(W1)) - W1; 
     L_ = diag(sum(W2)) - W2;
+    
+%     L_sparse = diag(sum(W)) - W;
     
     non_nan_index = cell(1, n);
     
     normal_mat = zeros(3, 6 * n);
     normal_mat_ = zeros(3, 6 * n);
     x_index = zeros(1, 6 * n);
-    
+%     new_I1u = zeros(1, 6 * n);
+%     new_I1v = zeros(1, 6 * n);
+%     new_I2u = zeros(1, 6 * n);
+%     new_I2v = zeros(1, 6 * n);
+%     
     start_index = 1;
     index_list = zeros(1, n);    
     measure = (k1 ./ k3) .^ 2 + (k2 ./ k3) .^ 2;
@@ -89,7 +135,12 @@ if method.method == 1
         tem3_ = tem3_(tem_mask);              
 
         num_sol = length(tem1);
-        [~, id] = min(measure(tem_mask, i));
+        
+        tem = measure(tem_mask, i);
+        if any(tem3 > 0)
+            tem(tem3 < 0) = NaN;
+        end
+        [~, id] = min(tem);
         V0(start_index + id - 1) = 1;
         
         index_list(i) = num_sol;
@@ -99,20 +150,43 @@ if method.method == 1
         normal_mat(:, start_index:(start_index + num_sol - 1)) = [tem1, tem2, tem3]';
         normal_mat_(:, start_index:(start_index + num_sol - 1)) = [tem1_, tem2_, tem3_]';
         x_index(start_index:(start_index + num_sol - 1)) = ones(1, num_sol) * i;
+%         new_I1u(start_index:(start_index + num_sol - 1)) = ones(1, num_sol) * I1u(i);
+%         new_I1v(start_index:(start_index + num_sol - 1)) = ones(1, num_sol) * I1v(i);
+%         new_I2u(start_index:(start_index + num_sol - 1)) = ones(1, num_sol) * I2u(i);
+%         new_I2v(start_index:(start_index + num_sol - 1)) = ones(1, num_sol) * I2v(i);
         start_index = start_index + index_list(i);        
     end       
     
 
-    
     m = start_index - 1;
     
     normal_mat = normal_mat(:, 1:m);
     normal_mat_ = normal_mat_(:, 1:m);
     x_index = x_index(1:m);
     y_index = 1:m;
+%     new_I1u = new_I1u(1:m);
+%     new_I1v = new_I1v(1:m);
+%     new_I2u = new_I2u(1:m);
+%     new_I2v = new_I2v(1:m);
+    
+    K1 = sparse(x_index, y_index, normal_mat(1, :), n, m);
+    K2 = sparse(x_index, y_index, normal_mat(2, :), n, m);
+    K1_ = sparse(x_index, y_index, normal_mat_(1, :), n, m);
+    K2_ = sparse(x_index, y_index, normal_mat_(2, :), n, m);
+%     e1 = 1 + new_I1u .^ 2 + new_I1v .^ 2;
+%     e2 = 1 + new_I2u .^ 2 + new_I2v .^ 2;
+%     det_g1 = (e1 .* normal_mat(1, :) .^ 2 - 2 * new_I1u .* normal_mat(1, :) + 1) .* (e1 .* normal_mat(2, :) .^ 2 - 2 * new_I1v .* normal_mat(2, :) + 1);
+%     det_g1 = det_g1 - (e1 .* normal_mat(1, :) .* normal_mat(2, :) - new_I1u .* normal_mat(2, :) - new_I1v .* normal_mat(1, :)) .^ 2;
+%     
+%     det_g2 = (e2 .* normal_mat_(1, :) .^ 2 - 2 * new_I2u .* normal_mat_(1, :) + 1) .* (e2 .* normal_mat_(2, :) .^ 2 - 2 * new_I2v .* normal_mat_(2, :) + 1);
+%     det_g2 = det_g2 - (e2 .* normal_mat_(1, :) .* normal_mat_(2, :) - new_I2u .* normal_mat_(2, :) - new_I2v .* normal_mat_(1, :)) .^ 2;
+% 
+%     det_g1 = sparse(x_index, y_index, det_g1, n, m);
+%     det_g2 = sparse(x_index, y_index, det_g2, n, m);
     
     normal_mat = normal_mat ./ sqrt(sum(normal_mat .^ 2, 1));
-    normal_mat_ = normal_mat_ ./ sqrt(sum(normal_mat_ .^ 2, 1));    
+    normal_mat_ = normal_mat_ ./ sqrt(sum(normal_mat_ .^ 2, 1));  
+    
     
     S1 = sparse(x_index, y_index, normal_mat(1, :), n, m);
     S2 = sparse(x_index, y_index, normal_mat(2, :), n, m);
@@ -127,80 +201,78 @@ if method.method == 1
 
     S3_plus = normal_mat(3, :);
     S3_plus(S3_plus > 0) = 0;
-%     S3_plus(S3_plus < 0) = 1;
     S3_plus = sparse(x_index, y_index, S3_plus, n, m);
     
     S3_plus_ = normal_mat_(3, :);
     S3_plus_(S3_plus_ > 0) = 0;
-%     S3_plus_(S3_plus_ < 0) = 1;
     S3_plus_ = sparse(x_index, y_index, S3_plus_, n, m);    
     
     V0 = V0(1:m);   
 
-%     c0 = (norm(R1 * V0) ^ 2 + norm(R2 * V0) ^ 2) / n
-%     disp(V0' * (S1' * L * S1 + S2' * L * S2 + S3' * L * S3) * V0)
-%     disp(V0' * (S1_' * L_ * S1_ + S2_' * L_ * S2_ + S3_' * L_ * S3_) * V0)
-    c0 = 1.0;
-    c1 = 1.0;
-    c2 = 1.0;
-%     c2 = (norm(R1_ * V0) ^ 2 + norm(R2_ * V0) ^ 2) / n
-    c3 = 1.0;
-    
-    c4 = 1.0;
+    c1 = method.c1;
+    c2 = method.c2;
+    c3 = method.c3;
     
     B = full(sparse(x_index, y_index, ones(1, m), n, m)); 
-    A_original = c0 * (S1' * L * S1 + S2' * L * S2 + S3' * L * S3);
-    A = A_original + c2 * (S1_' * L_ * S1_ + S2_' * L_ * S2_ + S3_' * L_ * S3_);
+
+    A = (S1' * L * S1 + S2' * L * S2 + S3' * L * S3) + (S1_' * L_ * S1_ + S2_' * L_ * S2_ + S3_' * L_ * S3_);
+
+    A = A + c1 * (R1' * R1 + R2' * R2 + R1_' * R1_ + R2_' * R2_);
     
-    loss = max(V0' * A_original * V0, 0);
-    A = A + c1 * (R1' * R1 + R2' * R2); % regularization
-    A = A + c3 * (R1_' * R1_ + R2_' * R2_);
+    A = A + c2 * (K1' * K1 + K2' * K2 + K1_' * K1_ + K2_' * K2_);
+
     A = A / n;
-    A = A + c4 * (S3_plus' * S3_plus + S3_plus_' * S3_plus_);
+    A = A + c3 * (S3_plus' * S3_plus + S3_plus_' * S3_plus_);
 
-    % use L1 norm to replace the inequality constraint
-    s = 0.1;
-    tau = 5;
-    lam1 = 10;
-    lam2 = lam1 * s;
-    max_iter = 40;
-    mu = zeros(m, 1);
-    W = V0;
+%     loss = max(V0' * A * V0, 0);
+    
+    if strcmp(method.solver, 'admm')
+        % use L1 norm to replace the inequality constraint
+        s = 0.2;
+        tau = 10;
+        lam1 = 10;
+        lam2 = lam1 * s;
+        max_iter = 50;
+        mu = zeros(m, 1);
+        W = V0;
 
-    A = A + eye(m) * (tau - lam2);
+        A_tilde = A + eye(m) * (tau - lam2);
 
-    invA = A \ eye(m, m);
-%     invA = inv(A);
-    BinvA = B * invA;
-    BAB_inv_BA_inv = (BinvA * B') \ BinvA;
-    C = invA - BinvA' * BAB_inv_BA_inv;
-    b = sum(BAB_inv_BA_inv, 1)';
-    if loss > 0
+        invA = A_tilde \ eye(m, m);
+        BinvA = B * invA;
+        BAB_inv_BA_inv = (BinvA * B') \ BinvA;
+        C = invA - BinvA' * BAB_inv_BA_inv;
+        b = sum(BAB_inv_BA_inv, 1)';
+
         for i = 1:max_iter
             V = C * (tau * (W + mu)) + b;
-            
+
             z = V - mu;
             W = sign(z) .* max(abs(z) - lam1 / tau, 0);
 
             mu = mu + W - V;
         end
-        j = 1;
-        for i = 1:n
-            subV = V(j:(j + index_list(i) - 1)); % v_i
-            tem_mask = max(subV) == subV;
-            subV(tem_mask) = 1;
-            subV(~tem_mask) = 0;
-            V(j:(j + index_list(i) - 1)) = subV;
-            j = j + index_list(i);
-        end
-        loss_new = V' * A_original * V;
-        if loss_new >= loss
-            V = V0;
-        end
-
-    else
-        V = V0;
+  
     end
+    
+    if strcmp(method.solver, 'qp')
+        BinvA = A \ (B');
+        V = (B * BinvA) \ ones(n, 1);
+        V = BinvA * V;
+    end
+    j = 1;
+    for i = 1:n
+        subV = V(j:(j + index_list(i) - 1)); % v_i
+        tem_mask = max(subV) == subV;
+        subV(tem_mask) = 1;
+        subV(~tem_mask) = 0;
+        V(j:(j + index_list(i) - 1)) = subV;
+        j = j + index_list(i);
+    end  
+%     loss_new = V' * A * V;
+%     if loss_new > loss
+%         V = V0;
+%     end
 
     j = 1;
     for i = 1:n

@@ -12,7 +12,8 @@ range_end = 200;
 pairs_num = 20;
 
 % define normal such that normal^T X = a1 where a1 = 1
-n1 = -[0.8, 0, 0.2]';
+n1 = [0.8, 0, 0.2]';
+% n1 = [0, 0, 1]';
 n1 = n1 / norm(n1);
 d1 = 10;
 n1 = n1 / d1;
@@ -56,7 +57,7 @@ J21b = zeros(pairs_num, total_num);
 J21c = zeros(pairs_num, total_num);
 J21d = zeros(pairs_num, total_num);
 Ngth = zeros(3 * (pairs_num + 1), total_num);
-Ngth(1:3, :) = repmat(n1 / norm(n1), 1, total_num);
+Ngth(1:3, :) = -repmat(n1 / norm(n1), 1, total_num);
 Pgth = zeros(3 * (pairs_num + 1), total_num);
 Pgth(1:3, :) = 1 ./ (n1' * q1) .* q1;
 for i = 1:pairs_num
@@ -77,6 +78,7 @@ for i = 1:pairs_num
     R_set{i} = R;
     q2(1, :) = q2(1, :) ./ q2(3, :);
     q2(2, :) = q2(2, :) ./ q2(3, :);
+    q2(3, :) = ones(1, total_num);
     qgth{i + 1} = q2;
     I2u(i, :) = q2(1, :);
     I2v(i, :) = q2(2, :);
@@ -84,7 +86,7 @@ for i = 1:pairs_num
     n2 = R * n1;
     a2 = (1 + n1' * R' * t');
     H21 = R' - ((R' * t') * n2') / a2;
-    Ngth((3 * i + 1):(3 * i + 3), :) = repmat(n2 / norm(n2), 1, total_num);
+    Ngth((3 * i + 1):(3 * i + 3), :) = -repmat(n2 / norm(n2), 1, total_num);
     Pgth((3 * i + 1):(3 * i + 3), :) = a2 ./ (n2' * q2) .* q2;    
     [~, pu, pv, puu, puv, pvv]=homderivs(H21, q2(1:2, :));
     J21a(i, :) = pu(1, :);
@@ -104,6 +106,6 @@ for i = 1:pairs_num
     J12d(i, :) = J21a(i, :) ./ determinant;
 end
 
-save('warps_plane_steep.mat', 'H21uua', 'H21uub', 'H21uva', 'H21uvb', 'H21vva', 'H21vvb', ...
+save('warps_plane_hard.mat', 'H21uua', 'H21uub', 'H21uva', 'H21uvb', 'H21vva', 'H21vvb', ...
     'I1u', 'I1v', 'I2u', 'I2v', 'J21a', 'J21b', 'J21c', 'J21d', 'J12a', 'J12b', 'J12c', 'J12d', ...
     'Ngth', 'Pgth', 'qgth');
