@@ -28,6 +28,13 @@ if method.method == 0
                 measure = measure + abs((e_ .* k1_ .^ 2 - 2 * I2u_all .* k1_ + 1) .* (e_ .* k2_ .^ 2 - 2 * I2v_all .* k2_ + 1)...
                     - (e_ .* k1_ .* k2_ - I2u_all .* k2_ - I2v_all .* k1_) .^ 2);
             end
+%         case 'dirichlet'
+%             e = 1 + I1u_all .^ 2 + I1v_all .^ 2;
+%             measure = e .* (k1 .^ 2 + k2 .^ 2) + 2 * k3;
+%             if method.both_view
+%                 e_ = 1 + I2u_all .^ 2 + I2v_all .^ 2;
+%                 measure = measure + e_ .* (k1_ .^ 2 + k2_ .^ 2) + 2 * k3_;
+%             end
         otherwise
             %%% default to apap
             measure = (k1 ./ k3) .^ 2 + (k2 ./ k3) .^ 2;
@@ -45,12 +52,12 @@ if method.method == 0
         if method.visb && any(k3(:, i) > 0)
             tem = tem(k3(:, i) > 0);
         end
+%         tem(~isnan(tem)) = rand(sum(~isnan(tem)), 1);
         mask(:, i) = measure(:, i) == min(tem);
     end
 end
 
 if method.method == 1
-    tic
     I1u_all = repmat(I1u, 6, 1); I1v_all = repmat(I1v, 6, 1);
     I2u_all = repmat(I2u, 6, 1); I2v_all = repmat(I2v, 6, 1);
     k3 = 1 - I1u_all .* k1 - I1v_all .* k2;    
@@ -215,8 +222,13 @@ if method.method == 1
     
     B = full(sparse(x_index, y_index, ones(1, m), n, m)); 
 
+%     L = expm(L);
+%     L_ = expm(L_);
+%     L = L * L;
+%     L_ = L_ * L_;
+    
     A = (S1' * L * S1 + S2' * L * S2 + S3' * L * S3) + (S1_' * L_ * S1_ + S2_' * L_ * S2_ + S3_' * L_ * S3_);
-
+%     A = (K1' * L * K1 + K2' * L * K2) + (K1_' * L_ * K1_ + K2_' * L_ * K2_);
     A = A + c1 * (R1' * R1 + R2' * R2 + R1_' * R1_ + R2_' * R2_);
     
     A = A + c2 * (K1' * K1 + K2' * K2 + K1_' * K1_ + K2_' * K2_);
@@ -229,7 +241,7 @@ if method.method == 1
     if strcmp(method.solver, 'admm')
         % use L1 norm to replace the inequality constraint
         s = 0.2;
-        tau = 10;
+        tau = 10; % 10
         lam1 = 10;
         lam2 = lam1 * s;
         max_iter = 50;
@@ -282,7 +294,6 @@ if method.method == 1
         mask(non_nan_index{i}(subV == 1), i) = 1;
         
     end
-    toc
 end
 
 
@@ -327,6 +338,8 @@ if method.method == 2
         end
         err_list(:, method.view_id - 1) = [];
         
+
+
         [~, index] = min(median(err_list, 2)); % choose least median
         
         all_index = find(mask(:, i) == 1);

@@ -12,13 +12,13 @@ addpath(genpath('SeDuMi_1_3'));
 addpath(genpath('schwarps'));
 addpath(genpath('sparseinv'));
 addpath(genpath('utils'));
-dataset = 'Kinect_paper.mat';
+% dataset = 'Kinect_paper.mat';
 % dataset = 'warps_tshirt.mat';
 % dataset = 'warps_plane1.mat';
 % dataset = 'warps_plane2.mat';
 % dataset = 'warps_cylinder1.mat';
 % dataset = 'warps_cylinder2.mat';
-% dataset = 'warps_cylinder3.mat';
+dataset = 'warps_cylinder3.mat';
 
 
 dataset = ['./warps_data/', dataset];
