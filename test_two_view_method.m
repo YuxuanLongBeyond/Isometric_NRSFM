@@ -16,9 +16,12 @@ addpath(genpath('utils'));
 % dataset = 'warps_tshirt.mat';
 % dataset = 'warps_plane1.mat';
 % dataset = 'warps_plane2.mat';
-% dataset = 'warps_cylinder1.mat';
+
+% dataset = 'warps_plane_trial10.mat';
+
+dataset = 'warps_cylinder1.mat';
 % dataset = 'warps_cylinder2.mat';
-dataset = 'warps_cylinder3.mat';
+% dataset = 'warps_cylinder3.mat';
 
 
 dataset = ['./warps_data/', dataset];
@@ -30,7 +33,7 @@ pairs_num = length(qgth) - 1;
 view_id_list = 2:(1 + pairs_num);
 % view_id_list(reference_id) = [];
 
-% view_id_list = [3];
+% view_id_list = [2];
 show_plot = 0;
 
 
@@ -39,11 +42,11 @@ second_view_id = 2;
 
 %%% solution selection by methods:
 method.method = 0; % (local approach) select the solution by seeking the least l2 norm
-% method.measure = 'apap'; % as parallel as possible
+method.measure = 'apap'; % as parallel as possible
 % method.measure = 'ln'; % least norm
-method.measure = 'msa'; % minimum surface area
+% method.measure = 'msa'; % minimum surface area
 method.visb = 1;
-method.both_view = 1;
+method.both_view = 0;
 
 
 
@@ -266,39 +269,6 @@ else
         tic
         % Integrate normals to find depth
         P_grid = calculate_depth(N_res,u_all,v_all,1e0);
-%             a = J21a(view_id - 1, :); b = J21b(view_id - 1, :);
-%             c = J21c(view_id - 1, :); d = J21d(view_id - 1, :);
-%             u = I1u(1,:);
-%             v = I1v(1,:);
-%             
-%             P = calculate_depth(N_res(1:3, :), I1u(1,:),I1v(1,:),1e0);
-% 
-%             Ep = (1 +  u .^ 2 + v .^ 2) .* (x1 .^ 2) - 2 * (a .* u + b .* v) .* x1 + (a .^ 2 + b .^ 2);
-%             Gp = (1 +  u .^ 2 + v .^ 2) .* (x2 .^ 2) - 2 * (c .* u + d .* v) .* x2 + (c .^ 2 + d .^ 2);
-%             Fp = (1 +  u .^ 2 + v .^ 2) .* x1 .* x2 - x1 .* (c .* u + d .* v) - x2 .* (a .* u + b .* v) + a .* c + b .* d;
-%             
-%             E_ = (1 + I2u_tem .^ 2 + I2v_tem .^ 2) .* (k1_ .^ 2) - 2 * k1_ .* I2u_tem + 1;
-%             G_ = (1 + I2u_tem .^ 2 + I2v_tem .^ 2) .* (k2_ .^ 2) - 2 * k2_ .* I2v_tem + 1;
-%             F_ = (1 + I2u_tem .^ 2 + I2v_tem .^ 2) .* (k2_ .* k1_) - k2_ .* I2u_tem - k1_ .* I2v_tem;
-%             
-%             E = (1 +  u .^ 2 + v .^ 2) .* (k1 .^ 2)  - 2 * k1 .* I1u(1,:) + 1;
-%             G = (1 +  u .^ 2 + v .^ 2) .* (k2 .^ 2)  - 2 * k2 .* I1v(1,:) + 1;
-%             F = (1 +  u .^ 2 + v .^ 2) .* (k1 .* k2) - k2 .* I1u(1,:) - k1 .* I1v(1,:);
-%             
-%             area1 = E .* G - F .^ 2;
-%             area2 = E_ .* G_ - F_ .^ 2;
-%             
-%             ans = area1 ./ area2;
-%             ans1 = G_ ./ Gp;
-%             ans2 = E_ ./ Ep;
-%             ans3 = F_ ./ Fp;
-%             d1 = P(3, :); % depth in the reference frame
-%             d2 = sqrt(Ep ./ E_) .* d1;
-%             P_tem = [I2u_tem;I2v_tem;ones(1,length(I2u_tem))] .* [d2; d2; d2];
-%             P_grid = [P; P_tem];
-
-        
-        
         
         % compare with ground truth
         [P2,err_p] = compare_with_Pgth(P_grid,u_all,v_all,q_n,Pgth_tem);

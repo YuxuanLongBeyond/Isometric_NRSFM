@@ -16,9 +16,9 @@ addpath(genpath('utils'));
 % dataset = 'warps_tshirt.mat';
 % dataset = 'warps_plane1.mat';
 % dataset = 'warps_plane2.mat';
-% dataset = 'warps_cylinder1.mat';
+dataset = 'warps_cylinder1.mat';
 % dataset = 'warps_cylinder2.mat';
-dataset = 'warps_cylinder3.mat';
+% dataset = 'warps_cylinder3.mat';
 
 
 dataset = ['./warps_data/', dataset];
@@ -43,6 +43,7 @@ par = 2e-3; % schwarzian parameter.. needs to be tuned (usually its something cl
 % if grid %max(sum(visb)) == num
 %     % make a grid
 %     [I1u,I1v,I2u,I2v,visb] = create_grid(q_n,visb,20);
+
 % else
 %     % point-wise
 %     I1u = repmat(q_n(1,:),num-1,1);
@@ -78,8 +79,9 @@ e1 = 1+ I1u.^2 + I1v.^2; u1 = I1u; v1 = I1v;
 % create sum of squares polynomial
 eq = create_polynomial_coefficients(a,b,c,d,t1,t2,e,e1,u,u1,v,v1);
 % minimise it to obtain depth derivatives
+tic
 res = solve_polynomial(eq);
-
+toc
 % recover first order derivatives on rest of the surfaces
 k1_all = [res(:,1)';a.*repmat(res(:,1)',num-1,1) + b.*repmat(res(:,2)',num-1,1) + t1];
 k2_all = [res(:,2)';c.*repmat(res(:,1)',num-1,1) + d.*repmat(res(:,2)',num-1,1) + t2];

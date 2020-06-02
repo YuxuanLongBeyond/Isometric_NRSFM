@@ -9,11 +9,15 @@ cy = 0;
 sample_num = 20; % number of samples per row or column in the image
 range_start = -200;
 range_end = 200;
-pairs_num = 20;
+pairs_num = 2;
 
 % define normal such that normal^T X = a1 where a1 = 1
-n1 = [0.8, 0, 0.2]';
 % n1 = [0, 0, 1]';
+% n1 = [0.8, 0, 0.2]';
+% n1 = [0.3, 0.3, 0.8]';
+% n1 = [0.2 0.2 0.8]';
+% n1 = [0.25 0.25 0.8]';
+n1 = [0.55 0.55 0.8]';
 n1 = n1 / norm(n1);
 d1 = 10;
 n1 = n1 / d1;
@@ -33,7 +37,8 @@ I1v = q2(2, :);
 
 % create a set of random rotation, translation
 t_all = randn(pairs_num, 3) * 0.5;
-r_all = randn(pairs_num, 3);
+% t_all = randn(pairs_num, 3) * 0.0;
+r_all = randn(pairs_num, 3) * 0.5;
 
 % create image points in the second view
 q1 = [I1u; I1v; ones(1, total_num)];
@@ -106,6 +111,6 @@ for i = 1:pairs_num
     J12d(i, :) = J21a(i, :) ./ determinant;
 end
 
-save('warps_plane_hard.mat', 'H21uua', 'H21uub', 'H21uva', 'H21uvb', 'H21vva', 'H21vvb', ...
+save('./warps_data/warps_plane_trial10.mat', 'H21uua', 'H21uub', 'H21uva', 'H21uvb', 'H21vva', 'H21vvb', ...
     'I1u', 'I1v', 'I2u', 'I2v', 'J21a', 'J21b', 'J21c', 'J21d', 'J12a', 'J12b', 'J12c', 'J12d', ...
     'Ngth', 'Pgth', 'qgth');
