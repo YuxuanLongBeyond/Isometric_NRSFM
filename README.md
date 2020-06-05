@@ -1,5 +1,5 @@
 # Isometric_NRSFM
-Semester project on NRSFM
+Semester project on two-view Iso-NRSFM
 
 
-Run the example_infp.m for demo
+Run the test_two_view_method.m for demo
