@@ -12,58 +12,54 @@ addpath(genpath('SeDuMi_1_3'));
 addpath(genpath('schwarps'));
 addpath(genpath('sparseinv'));
 addpath(genpath('utils'));
+
+
 % dataset = 'Kinect_paper.mat';
 % dataset = 'warps_tshirt.mat';
 % dataset = 'warps_plane1.mat';
 % dataset = 'warps_plane2.mat';
-
-% dataset = 'warps_plane_trial10.mat';
-
 dataset = 'warps_cylinder1.mat';
 % dataset = 'warps_cylinder2.mat';
 % dataset = 'warps_cylinder3.mat';
 
-
-dataset = ['./warps_data/', dataset];
+show_plot = 1; % flag for showing the recovered shapes
 method = struct;
-load(dataset);
-pairs_num = length(qgth) - 1;
 
-% reference_id = 1;
-view_id_list = 2:(1 + pairs_num);
-% view_id_list(reference_id) = [];
-
-% view_id_list = [2];
-show_plot = 0;
+method.method = 1; 
+% 0 for local approach: locally select the shape parameters
+% 1 for global approach: select the solution by maximizing the consistency
+% 2 for least median: select the least median (not a two-view method)
 
 
-direct_substitute = 0;
-second_view_id = 2;
-
-%%% solution selection by methods:
-method.method = 0; % (local approach) select the solution by seeking the least l2 norm
+%%% local approach
 method.measure = 'apap'; % as parallel as possible
-% method.measure = 'ln'; % least norm
+% method.measure = 'ln'; % least norm or least change of depth
 % method.measure = 'msa'; % minimum surface area
-method.visb = 1;
-method.both_view = 0;
+method.visb = 1; % flag for applying visibility condition
+method.both_view = 0; % flag for penalizing on both views
 
 
-
-% method.method = 1; % (global approach) select the solution by exploring the graph Laplacian
+%%% global approach
 method.solver = 'admm';
 % method.solver = 'qp';
-
 method.c1 = 1.0; % parallelism for both views
 method.c2 = 0.1; % least depth change in both views
 method.c3 = 1.0; % visibility for both views
 
-% method.method = 2; % select the least median (not a two-view method)
-
-
-%%% parameters for constructing the Laplacian
+% parameters for constructing the Laplacian
 method.sigma = 0.2;
 method.ratio = 1.0; % threshold = ratio * average squared distance
+
+
+dataset = ['./warps_data/', dataset];
+load(dataset);
+pairs_num = length(qgth) - 1;
+view_id_list = 2:(1 + pairs_num);
+% view_id_list = [2];
+
+direct_substitute = 0;
+second_view_id = 2;
+
 
 err = 1e-20; % tolerance for imaginary part 
 %%% (if a number's imaginary part is greater than err, then it's deemed as complex number)

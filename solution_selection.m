@@ -28,13 +28,6 @@ if method.method == 0
                 measure = measure + abs((e_ .* k1_ .^ 2 - 2 * I2u_all .* k1_ + 1) .* (e_ .* k2_ .^ 2 - 2 * I2v_all .* k2_ + 1)...
                     - (e_ .* k1_ .* k2_ - I2u_all .* k2_ - I2v_all .* k1_) .^ 2);
             end
-%         case 'dirichlet'
-%             e = 1 + I1u_all .^ 2 + I1v_all .^ 2;
-%             measure = e .* (k1 .^ 2 + k2 .^ 2) + 2 * k3;
-%             if method.both_view
-%                 e_ = 1 + I2u_all .^ 2 + I2v_all .^ 2;
-%                 measure = measure + e_ .* (k1_ .^ 2 + k2_ .^ 2) + 2 * k3_;
-%             end
         otherwise
             %%% default to apap
             measure = (k1 ./ k3) .^ 2 + (k2 ./ k3) .^ 2;
@@ -68,16 +61,13 @@ if method.method == 1
 
     F1 = [I1u; I1v]; % image coordinates on first view
     F2 = [I2u; I2v]; % image coordinates on second view
-%     F = [F1; F2];
 
     % compute distance maps for image coordinates
     dist_map1 = zeros(n, n);
     dist_map2 = zeros(n, n);
-%     dist_map = zeros(n, n);
     for i = 1:n
         dist_map1(:, i) = sum((F1 - F1(:, i)) .^ 2);
         dist_map2(:, i) = sum((F2 - F2(:, i)) .^ 2);
-%         dist_map(:, i) = sum((F - F(:, i)) .^ 2);
     end
 
     % compute the adjacency matrix for first view
@@ -96,31 +86,16 @@ if method.method == 1
     W2 = W2 - eye(n);
     W2(dist_mask2) = 0;
 
-%     spy(W1)
-%     avg_dist = sum(sum(dist_map)) / (n ^ 2 - n);
-%     thre = 0.02 * avg_dist;
-%     dist_mask = dist_map > thre;
-%     W = exp(-dist_map / (2 * 0.1 ^ 2));
-%     W = W - eye(n);
-%     W(dist_mask) = 0;
-
-
     % compute the graph Laplacians (unormalized form)
     L = diag(sum(W1)) - W1; 
     L_ = diag(sum(W2)) - W2;
-    
-%     L_sparse = diag(sum(W)) - W;
     
     non_nan_index = cell(1, n);
     
     normal_mat = zeros(3, 6 * n);
     normal_mat_ = zeros(3, 6 * n);
     x_index = zeros(1, 6 * n);
-%     new_I1u = zeros(1, 6 * n);
-%     new_I1v = zeros(1, 6 * n);
-%     new_I2u = zeros(1, 6 * n);
-%     new_I2v = zeros(1, 6 * n);
-%     
+
     start_index = 1;
     index_list = zeros(1, n);    
     measure = (k1 ./ k3) .^ 2 + (k2 ./ k3) .^ 2;
@@ -157,10 +132,6 @@ if method.method == 1
         normal_mat(:, start_index:(start_index + num_sol - 1)) = [tem1, tem2, tem3]';
         normal_mat_(:, start_index:(start_index + num_sol - 1)) = [tem1_, tem2_, tem3_]';
         x_index(start_index:(start_index + num_sol - 1)) = ones(1, num_sol) * i;
-%         new_I1u(start_index:(start_index + num_sol - 1)) = ones(1, num_sol) * I1u(i);
-%         new_I1v(start_index:(start_index + num_sol - 1)) = ones(1, num_sol) * I1v(i);
-%         new_I2u(start_index:(start_index + num_sol - 1)) = ones(1, num_sol) * I2u(i);
-%         new_I2v(start_index:(start_index + num_sol - 1)) = ones(1, num_sol) * I2v(i);
         start_index = start_index + index_list(i);        
     end       
     
@@ -171,25 +142,11 @@ if method.method == 1
     normal_mat_ = normal_mat_(:, 1:m);
     x_index = x_index(1:m);
     y_index = 1:m;
-%     new_I1u = new_I1u(1:m);
-%     new_I1v = new_I1v(1:m);
-%     new_I2u = new_I2u(1:m);
-%     new_I2v = new_I2v(1:m);
     
     K1 = sparse(x_index, y_index, normal_mat(1, :), n, m);
     K2 = sparse(x_index, y_index, normal_mat(2, :), n, m);
     K1_ = sparse(x_index, y_index, normal_mat_(1, :), n, m);
     K2_ = sparse(x_index, y_index, normal_mat_(2, :), n, m);
-%     e1 = 1 + new_I1u .^ 2 + new_I1v .^ 2;
-%     e2 = 1 + new_I2u .^ 2 + new_I2v .^ 2;
-%     det_g1 = (e1 .* normal_mat(1, :) .^ 2 - 2 * new_I1u .* normal_mat(1, :) + 1) .* (e1 .* normal_mat(2, :) .^ 2 - 2 * new_I1v .* normal_mat(2, :) + 1);
-%     det_g1 = det_g1 - (e1 .* normal_mat(1, :) .* normal_mat(2, :) - new_I1u .* normal_mat(2, :) - new_I1v .* normal_mat(1, :)) .^ 2;
-%     
-%     det_g2 = (e2 .* normal_mat_(1, :) .^ 2 - 2 * new_I2u .* normal_mat_(1, :) + 1) .* (e2 .* normal_mat_(2, :) .^ 2 - 2 * new_I2v .* normal_mat_(2, :) + 1);
-%     det_g2 = det_g2 - (e2 .* normal_mat_(1, :) .* normal_mat_(2, :) - new_I2u .* normal_mat_(2, :) - new_I2v .* normal_mat_(1, :)) .^ 2;
-% 
-%     det_g1 = sparse(x_index, y_index, det_g1, n, m);
-%     det_g2 = sparse(x_index, y_index, det_g2, n, m);
     
     normal_mat = normal_mat ./ sqrt(sum(normal_mat .^ 2, 1));
     normal_mat_ = normal_mat_ ./ sqrt(sum(normal_mat_ .^ 2, 1));  
@@ -222,13 +179,7 @@ if method.method == 1
     
     B = full(sparse(x_index, y_index, ones(1, m), n, m)); 
 
-%     L = expm(L);
-%     L_ = expm(L_);
-%     L = L * L;
-%     L_ = L_ * L_;
-    
     A = (S1' * L * S1 + S2' * L * S2 + S3' * L * S3) + (S1_' * L_ * S1_ + S2_' * L_ * S2_ + S3_' * L_ * S3_);
-%     A = (K1' * L * K1 + K2' * L * K2) + (K1_' * L_ * K1_ + K2_' * L_ * K2_);
     A = A + c1 * (R1' * R1 + R2' * R2 + R1_' * R1_ + R2_' * R2_);
     
     A = A + c2 * (K1' * K1 + K2' * K2 + K1_' * K1_ + K2_' * K2_);
@@ -348,9 +299,6 @@ if method.method == 2
     end
 
 end
-
-
-
 
 mask = mask == 1;  
 end
