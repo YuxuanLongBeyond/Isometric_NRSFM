@@ -16,21 +16,21 @@ addpath(genpath('utils'));
 % dataset = 'warps_tshirt.mat';
 % dataset = 'warps_plane1.mat';
 % dataset = 'warps_plane2.mat';
-dataset = 'warps_cylinder1.mat';
+% dataset = 'warps_cylinder1.mat';
 % dataset = 'warps_cylinder2.mat';
-% dataset = 'warps_cylinder3.mat';
+dataset = 'warps_cylinder3.mat';
 
 
 dataset = ['./warps_data/', dataset];
 load(dataset);
-
+pairs_num = length(qgth) - 1;
 %3D Ground truth points and normalized image points
 num = length(qgth);
 for i=1:num
     q_n(2*(i-1)+1:2*(i-1)+2,:) = qgth{i}(1:2, :);
 end
 %visiblity matrix: remove points visible in less than 3 views
-visb = ones(num, size(Pgth, 2));
+visb = ones(num, size(I1u, 2));
 
 %%% GROUND TRUTH NORMALS %%%%%
 Ngth = create_gth_normals(Pgth,q_n,num);
@@ -52,7 +52,10 @@ par = 2e-3; % schwarzian parameter.. needs to be tuned (usually its something cl
 %     I2v = q_n(4:2:2*num,:);
 % end
 %%%%% SCHWARZIAN WARPS %%%%%
+I1u = repmat(I1u(1, :), pairs_num, 1);
+I1v = repmat(I1v(1, :), pairs_num, 1);
 % [I1u,I1v,I2u,I2v,J21a,J21b,J21c,J21d,J12a,J12b,J12c,J12d,H21uua,H21uub,H21uva,H21uvb,H21vva,H21vvb] = create_warps(I1u,I1v,I2u,I2v,visb,par);
+% [~,~,~,I1u,I1v,I2u,I2v,J21a,J21b,J21c,J21d,J12a,J12b,J12c,J12d,H21uua,H21uub,H21uva,H21uvb,H21vva,H21vvb] = create_tshirt_dataset(idx,length(idx), scene, par);
 % create schwarzian warps for the dataset
 
 % Christoffel Symbols (see equation 15 in the paper)

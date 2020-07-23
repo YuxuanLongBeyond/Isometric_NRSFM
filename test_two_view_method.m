@@ -14,18 +14,22 @@ addpath(genpath('sparseinv'));
 addpath(genpath('utils'));
 
 
-% dataset = 'Kinect_paper.mat';
+dataset = 'Kinect_paper.mat';
 % dataset = 'warps_tshirt.mat';
 % dataset = 'warps_plane1.mat';
 % dataset = 'warps_plane2.mat';
-dataset = 'warps_cylinder1.mat';
+
+% dataset = 'warps_plane_trial_critical.mat';
+
+% dataset = 'warps_cylinder1.mat';
 % dataset = 'warps_cylinder2.mat';
 % dataset = 'warps_cylinder3.mat';
 
-show_plot = 1; % flag for showing the recovered shapes
+show_plot = 0; % flag for showing the recovered shapes
+decomp = 1;
 method = struct;
 
-method.method = 1; 
+method.method = 0; 
 % 0 for local approach: locally select the shape parameters
 % 1 for global approach: select the solution by maximizing the consistency
 % 2 for least median: select the least median (not a two-view method)
@@ -54,6 +58,33 @@ method.ratio = 1.0; % threshold = ratio * average squared distance
 dataset = ['./warps_data/', dataset];
 load(dataset);
 pairs_num = length(qgth) - 1;
+
+%3D Ground truth points and normalized image points
+n = length(qgth);
+for i=1:n
+    q_n(2*(i-1)+1:2*(i-1)+2,:) = qgth{i}(1:2, :);
+end
+%visiblity matrix: remove points visible in less than 3 views
+visb = ones(n, size(I1u, 2));
+
+%%% GROUND TRUTH NORMALS %%%%%
+% Ngth = create_gth_normals(Pgth,q_n,n);
+
+%%% PARAMETERS %%%%%
+par = 2e-3; % schwarzian parameter.. needs to be tuned (usually its something close to 1e-3)
+
+noise_std = 0.00;
+I1u(1, :) = I1u(1, :) + randn(size(I1u(1, :))) * noise_std;
+I1v(1, :) = I1v(1, :) + randn(size(I1v(1, :))) * noise_std;
+
+I1u = repmat(I1u(1, :), pairs_num, 1);
+I1v = repmat(I1v(1, :), pairs_num, 1);
+
+
+% [I1u,I1v,I2u,I2v,J21a,J21b,J21c,J21d,J12a,J12b,J12c,J12d,H21uua,H21uub,H21uva,H21uvb,H21vva,H21vvb] = create_warps(I1u,I1v,I2u,I2v,visb,par);
+
+
+
 view_id_list = 2:(1 + pairs_num);
 % view_id_list = [2];
 
@@ -218,37 +249,74 @@ else
         Pgth_tem = [Pgth(1:3, :); Pgth((view_id * 3 - 2):(view_id * 3), :)];
         q_n = [qgth{1}(1:2, :); qgth{view_id}(1:2, :)];
 
-        % solve x1 and x2
-        eq = eq_coef{view_id - 1};
-        f1 = f1_coef{view_id - 1};
-        f2 = f2_coef{view_id - 1};
         tic
-        [x1, x2] = solve_cubic(eq, f1, f2, err);
+        if decomp
+            num_p = length(t1);
+            T = eye(3);
+            k1 = zeros(2, num_p);
+            k2 = zeros(2, num_p);
+            k1_ = zeros(2, num_p);
+            k2_ = zeros(2, num_p);
+            
+            for i =1:num_p
+                T_x = T; T_y = T;
+                x = [I1u(i); I1v(i)]; y = [I2u_tem(i); I2v_tem(i)];
+                T_x(3, 1:2) = x';
+                T_y(3, 1:2) = -y';
+                T_k = [J21a(view_id - 1, i), J21b(view_id - 1, i), t1(i);
+                        J21c(view_id - 1, i), J21d(view_id - 1, i), t2(i);
+                        0, 0, 1];
+                W = T_y * T_k * T_x;
+                
+                [n1_, n2_] = compute_normal(W');
+                k_second = [n1_(1:2) / ([y; 1]' * n1_), n2_(1:2) / ([y; 1]' * n2_)];
+                k1_(:, i) = k_second(1, :)';
+                k2_(:, i) = k_second(2, :)';
+                
+                n1 = W \ n1_;
+                n2 = W \ n2_;
+                k_first = [n1(1:2) / ([x; 1]' * n1), n2(1:2) / ([x; 1]' * n2)];
+                k1(:, i) = k_first(1, :)';
+                k2(:, i) = k_first(2, :)';
+            end
+            
+            tem = nan(4, num_p);
+            k1 = [tem; k1];
+            k2 = [tem; k2];
+            k1_ = [tem; k1_];
+            k2_ = [tem; k2_];
+            
+            
+        else
+            % solve x1 and x2
+            eq = eq_coef{view_id - 1};
+            f1 = f1_coef{view_id - 1};
+            f2 = f2_coef{view_id - 1};
+            
+            [x1, x2] = solve_cubic(eq, f1, f2, err);
+            
+            %%% Note that we replace all complex numbers with NaN
+            %%% there are 6 roots, so x1 and x2 have 6 rows of solution
+
+            J12a_all = repmat(J12a(view_id - 1, :), 6, 1); J12b_all = repmat(J12b(view_id - 1, :), 6, 1);
+            J12c_all = repmat(J12c(view_id - 1, :), 6, 1); J12d_all = repmat(J12d(view_id - 1, :), 6, 1);
+
+            % on the first view
+            k1 = J12a_all .* x1 + J12b_all .* x2;
+            k2 = J12c_all .* x1 + J12d_all .* x2;
+
+            % on the second view
+            k1_ = x1 + repmat(t1, 6, 1);
+            k2_ = x2 + repmat(t2, 6, 1);
+        end
         T_poly(count) = toc;
-        %%% Note that we replace all complex numbers with NaN
-        %%% there are 6 roots, so x1 and x2 have 6 rows of solution
-
-        J12a_all = repmat(J12a(view_id - 1, :), 6, 1); J12b_all = repmat(J12b(view_id - 1, :), 6, 1);
-        J12c_all = repmat(J12c(view_id - 1, :), 6, 1); J12d_all = repmat(J12d(view_id - 1, :), 6, 1);
-
-        % on the first view
-        k1 = J12a_all .* x1 + J12b_all .* x2;
-        k2 = J12c_all .* x1 + J12d_all .* x2;
-
-        % on the second view
-        k1_ = x1 + repmat(t1, 6, 1);
-        k2_ = x2 + repmat(t2, 6, 1);
-
+        
         % compute the mask for selecting the desirable solutions
         tic
         mask = solution_selection(I1u, I1v, I2u_tem, I2v_tem, k1, k2, k1_, k2_, method);
         T_sel(count) = toc;
         
         % gather k1 and k2 for both views
-%         k1 = k1(mask)'; k1_ = k1_(mask)';
-%         k2 = k2(mask)'; k2_ = k2_(mask)';
-%         k1_all = [k1; k1_];
-%         k2_all = [k2; k2_];
         k1_all = [k1(mask)'; k1_(mask)'];
         k2_all = [k2(mask)'; k2_(mask)'];
 
@@ -260,7 +328,7 @@ else
         N1 = N1./n ; N2 = N2./n; N3 = N3./n;
 
         N = [N1(:),N2(:),N3(:)]';
-        N_res = reshape(N(:),3*num, length(u_all));
+        N_res = reshape(N(:),3*num, size(u_all, 2));
 
         tic
         % Integrate normals to find depth
@@ -291,7 +359,7 @@ else
             hold off
         end
     %     disp('Frobenius norm of errors of the computed normals')
-    %     disp(norm(-N_res - Ngth_tem))
+%         disp(norm(-N_res - Ngth_tem))
         count = count + 1;
     end
 end

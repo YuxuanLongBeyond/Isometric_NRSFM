@@ -1,5 +1,5 @@
 function [x1, x2] = solve_cubic(eq, f1, f2, err)
-n = length(eq);
+n = size(eq, 2);
 x2 = zeros(6, n);
 x1 = x2;
 for i = 1: n

@@ -9,6 +9,7 @@ function draw_surface(P, color)
 %     [xi, yi] = meshgrid(linspace(min(x), max(x), 20), linspace(min(y), max(y), 20));
 %     F = scatteredInterpolant(x,y,z);
 %     zi = F(xi,yi);
+%     surf(xi, yi, zi, 'FaceColor', color, 'FaceAlpha',0.5)
     
 %     surf(reshape(x, 20, 20),reshape(y, 20, 20),reshape(z, 20, 20), 'FaceAlpha',0.5)
 %     surf(reshape(x, 20, 20),reshape(y, 20, 20),reshape(z, 20, 20), color)
