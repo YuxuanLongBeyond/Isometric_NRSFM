@@ -1,4 +1,6 @@
 function [na, nb] = compute_normal(H)
+%%% n3 should be nonzero
+
 
 % sigma = svd(H);
 % H = H / sigma(2);

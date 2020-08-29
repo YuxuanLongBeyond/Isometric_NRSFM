@@ -2,7 +2,7 @@
 clear all;close all;
 
 % add libraries
-addpath(genpath('BBS_NOOMP'));
+addpath(genpath('BBS'));
 addpath(genpath('tbxmanager'));
 tbxmanager restorepath
 
@@ -13,13 +13,12 @@ addpath(genpath('schwarps'));
 addpath(genpath('sparseinv'));
 addpath(genpath('utils'));
 
-
-dataset = 'Kinect_paper.mat';
-% dataset = 'warps_tshirt.mat';
+% dataset = 'Kinect_paper.mat';
+dataset = 'warps_tshirt.mat';
 % dataset = 'warps_plane1.mat';
 % dataset = 'warps_plane2.mat';
 
-% dataset = 'warps_plane_trial_critical.mat';
+% dataset = 'warps_plane_trial11.mat';
 
 % dataset = 'warps_cylinder1.mat';
 % dataset = 'warps_cylinder2.mat';
@@ -29,16 +28,17 @@ show_plot = 0; % flag for showing the recovered shapes
 decomp = 1;
 method = struct;
 
-method.method = 0; 
+method.method = 1; 
 % 0 for local approach: locally select the shape parameters
 % 1 for global approach: select the solution by maximizing the consistency
 % 2 for least median: select the least median (not a two-view method)
 
 
 %%% local approach
-method.measure = 'apap'; % as parallel as possible
-% method.measure = 'ln'; % least norm or least change of depth
 % method.measure = 'msa'; % minimum surface area
+% method.measure = 'apap'; % as parallel as possible
+method.measure = 'ln'; % least norm or least change of depth
+
 method.visb = 1; % flag for applying visibility condition
 method.both_view = 0; % flag for penalizing on both views
 
@@ -73,15 +73,21 @@ visb = ones(n, size(I1u, 2));
 %%% PARAMETERS %%%%%
 par = 2e-3; % schwarzian parameter.. needs to be tuned (usually its something close to 1e-3)
 
-noise_std = 0.00;
-I1u(1, :) = I1u(1, :) + randn(size(I1u(1, :))) * noise_std;
-I1v(1, :) = I1v(1, :) + randn(size(I1v(1, :))) * noise_std;
+% add noise
+rng(2020);
+pixel_noise = 5;
+f = 500; num_p = length(I1u(1, :));
+I1u(1, :) = randn(1, num_p) * pixel_noise / f + I1u(1, :);
+I1v(1, :) = randn(1, num_p) * pixel_noise / f + I1v(1, :);
+I2u = randn(pairs_num, num_p) * pixel_noise / f + I2u;
+I2v = randn(pairs_num, num_p) * pixel_noise / f + I2v;
+
 
 I1u = repmat(I1u(1, :), pairs_num, 1);
 I1v = repmat(I1v(1, :), pairs_num, 1);
 
 
-% [I1u,I1v,I2u,I2v,J21a,J21b,J21c,J21d,J12a,J12b,J12c,J12d,H21uua,H21uub,H21uva,H21uvb,H21vva,H21vvb] = create_warps(I1u,I1v,I2u,I2v,visb,par);
+[I1u,I1v,I2u,I2v,J21a,J21b,J21c,J21d,J12a,J12b,J12c,J12d,H21uua,H21uub,H21uva,H21uvb,H21vva,H21vvb] = create_warps(I1u,I1v,I2u,I2v,visb,par);
 
 
 
@@ -369,8 +375,12 @@ end
 if length(view_id_list) > 1
     disp('Errors for the points')
     mean(error_metric(1:2, :)')
-    disp('Errors for the normals')
+    disp('Errors for the normals (first and second)')
     mean(error_metric(3:4, :)')
+    
+    disp('Errors for the normals (all)')
+    mean([mean(error_metric(3, :)), error_metric(4, :)])
+    
 else
     disp('Errors for the points')
     error_metric(1:2, :)'

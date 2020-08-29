@@ -15,15 +15,15 @@ function test_bbs
 % 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 
-test_normalize
-test_eval_monoval
-% test_eval_bival
-% timing_eval
-% test_coloc_bival
-% test_coloc_monoval
-% test_bending_disp
-% test_bending_disp_bival
-% check_bending
+%test_normalize
+%test_eval_monoval
+test_eval_bival
+%timing_eval
+%test_coloc_bival
+%test_coloc_monoval
+%test_bending_disp
+%test_bending_disp_bival
+%check_bending
 
 function test_normalize %#ok<DEFNU>
 [nx inter] = bbs_normalize(0, 1, 5, 1)

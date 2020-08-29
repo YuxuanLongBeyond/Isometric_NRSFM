@@ -51,7 +51,8 @@ if method.method == 0
             tem = tem(k3(:, i) > 0);
         end
 %         tem(~isnan(tem)) = rand(sum(~isnan(tem)), 1);
-        mask(:, i) = measure(:, i) == min(tem);
+        find_index = find(measure(:, i) == min(tem));
+        mask(find_index(1), i) = 1;
     end
 end
 

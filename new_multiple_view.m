@@ -2,7 +2,7 @@
 clear all;close all;
 
 % add libraries
-addpath(genpath('BBS_NOOMP'));
+addpath(genpath('BBS'));
 addpath(genpath('tbxmanager'));
 tbxmanager restorepath
 
@@ -13,9 +13,9 @@ addpath(genpath('schwarps'));
 addpath(genpath('sparseinv'));
 addpath(genpath('utils'));
 % dataset = 'Kinect_paper.mat';
-% dataset = 'warps_tshirt.mat';
+dataset = 'warps_tshirt.mat';
 % dataset = 'warps_plane1.mat';
-dataset = 'warps_plane2.mat';
+% dataset = 'warps_plane2.mat';
 % dataset = 'warps_cylinder1.mat';
 % dataset = 'warps_cylinder2.mat';
 % dataset = 'warps_cylinder3.mat';
@@ -52,12 +52,24 @@ par = 2e-3; % schwarzian parameter.. needs to be tuned (usually its something cl
 %     I2u = q_n(3:2:2*num,:);
 %     I2v = q_n(4:2:2*num,:);
 % end
+
+% add noise
+rng(2020);
+pixel_noise = 0;
+f = 500; num_p = length(I1u(1, :));
+I1u(1, :) = randn(1, num_p) * pixel_noise / f + I1u(1, :);
+I1v(1, :) = randn(1, num_p) * pixel_noise / f + I1v(1, :);
+I2u = randn(num - 1, num_p) * pixel_noise / f + I2u;
+I2v = randn(num - 1, num_p) * pixel_noise / f + I2v;
+
+
 %%%%% SCHWARZIAN WARPS %%%%%
 I1u = repmat(I1u(1, :), pairs_num, 1);
 I1v = repmat(I1v(1, :), pairs_num, 1);
-% [I1u,I1v,I2u,I2v,J21a,J21b,J21c,J21d,J12a,J12b,J12c,J12d,H21uua,H21uub,H21uva,H21uvb,H21vva,H21vvb] = create_warps(I1u,I1v,I2u,I2v,visb,par);
+[I1u,I1v,I2u,I2v,J21a,J21b,J21c,J21d,J12a,J12b,J12c,J12d,H21uua,H21uub,H21uva,H21uvb,H21vva,H21vvb] = create_warps(I1u,I1v,I2u,I2v,visb,par);
 % [~,~,~,I1u,I1v,I2u,I2v,J21a,J21b,J21c,J21d,J12a,J12b,J12c,J12d,H21uua,H21uub,H21uva,H21uvb,H21vva,H21vvb] = create_tshirt_dataset(idx,length(idx), scene, par);
 % create schwarzian warps for the dataset
+
 
 % Christoffel Symbols (see equation 15 in the paper)
 %T1 = [-2*k1 -k2;-k2 0];
@@ -175,6 +187,10 @@ else
             W = T_y * T_k * T_x;
             W_set{j} = W;
             H = (W')^(-1);
+            
+            sigma = svd(H);
+            H = H / sigma(2);
+            
             S = H' * H - eye(3);
             
             coef_40 = coef_40 + S(2, 2) ^ 2 + S(3, 3) ^ 2;
@@ -230,3 +246,5 @@ disp('Average normal error on first frame')
 mean(tem(1))
 disp('Average normal error on other frames')
 mean(tem(2:end))
+disp('Average normal error on all frames')
+mean(tem)
