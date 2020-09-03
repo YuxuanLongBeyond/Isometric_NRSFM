@@ -28,13 +28,13 @@ for i = 2:n
     q =  bbs_eval(bbs,ctrlpts,I1u(1,:)',I1v(1,:)',0,0);
     I2u(i-1,:) = q(1,:);
     I2v(i-1,:) = q(2,:);
-    %Visualize Point Registration Error
-    figure;
-    plot(q_n(1,:),q_n(2,:),'ro');
-    hold on;
-    plot(q(1,:),q(2,:),'b*');
-    %mesh(reshape(q(1,:),size(xv)),reshape(q(2,:),size(xv)),zeros(size(xv)));
-    axis equal
-    hold off;
+%     %Visualize Point Registration Error
+%     figure;
+%     plot(q_n(1,:),q_n(2,:),'ro');
+%     hold on;
+%     plot(q(1,:),q(2,:),'b*');
+%     %mesh(reshape(q(1,:),size(xv)),reshape(q(2,:),size(xv)),zeros(size(xv)));
+%     axis equal
+%     hold off;
 end
 
