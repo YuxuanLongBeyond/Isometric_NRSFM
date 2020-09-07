@@ -1,4 +1,4 @@
-function [error_metric, T_poly, T_sel, T_norm] = test_two_view(dataset, pixel_noise, f, show_plot, decomp, choice, measure, use_visb, solver, direct_substitute, second_view_id, grid)
+function [error_metric, T_poly, T_sel, T_norm] = test_two_view(dataset, pixel_noise, f, show_plot, decomp, choice, measure, use_visb, solver, direct_substitute, second_view_id, grid, use_warp)
 
 method = struct;
 
@@ -23,7 +23,12 @@ method.sigma = 0.2;
 method.ratio = 1.0; % threshold = ratio * average squared distance
 
 dataset = ['./warps_data/', dataset];
-load(dataset, 'qgth', 'Pgth', 'Ngth');
+if use_warp
+    load(dataset);
+else
+    load(dataset, 'qgth', 'Pgth', 'Ngth', 'K');
+end
+
 
 %3D Ground truth points and normalized image points
 n = length(qgth);
@@ -53,21 +58,32 @@ else
     I2v = q_n(4:2:2*n,:);
 end
 
-% add noise
+% Add noise
+if exist('K','var') == 0
+    fx = f; fy = f;
+else
+    fx = K(1, 1); fy = K(2, 2);
+end
+
 rng(2020);
 num_p = length(I1u(1, :));
-I1u(1, :) = randn(1, num_p) * pixel_noise / f + I1u(1, :);
-I1v(1, :) = randn(1, num_p) * pixel_noise / f + I1v(1, :);
-I2u = randn(pairs_num, num_p) * pixel_noise / f + I2u;
-I2v = randn(pairs_num, num_p) * pixel_noise / f + I2v;
+I1u(1, :) = randn(1, num_p) * pixel_noise / fx + I1u(1, :);
+I1v(1, :) = randn(1, num_p) * pixel_noise / fy + I1v(1, :);
+I2u = randn(pairs_num, num_p) * pixel_noise / fx + I2u;
+I2v = randn(pairs_num, num_p) * pixel_noise / fy + I2v;
 
 
 %%%%% SCHWARZIAN WARPS %%%%%
 I1u = repmat(I1u(1, :), pairs_num, 1);
 I1v = repmat(I1v(1, :), pairs_num, 1);
-[I1u,I1v,I2u,I2v,J21a,J21b,J21c,J21d,J12a,J12b,J12c,J12d,H21uua,H21uub,H21uva,H21uvb,H21vva,H21vvb] = create_warps(I1u,I1v,I2u,I2v,visb,par);
+tic
+if ~use_warp
+    [I1u,I1v,I2u,I2v,J21a,J21b,J21c,J21d,J12a,J12b,J12c,J12d,H21uua,H21uub,H21uva,H21uvb,H21vva,H21vvb] = create_warps(I1u,I1v,I2u,I2v,visb,par);
+end
 % [~,~,~,I1u,I1v,I2u,I2v,J21a,J21b,J21c,J21d,J12a,J12b,J12c,J12d,H21uua,H21uub,H21uva,H21uvb,H21vva,H21vvb] = create_tshirt_dataset(idx,length(idx), scene, par);
 % create schwarzian warps for the dataset
+
+toc
 
 view_id_list = 2:(1 + pairs_num);
 % view_id_list = [2];
@@ -351,16 +367,15 @@ end
 
 if length(view_id_list) > 1
     disp('Errors for the points')
-    mean(error_metric(1:2, :)')
+    mean(1000 * error_metric(1:2, :)')
     disp('Errors for the normals (first and second)')
     mean(error_metric(3:4, :)')
     
-    disp('Errors for the normals (all)')
-    mean([mean(error_metric(3, :)), error_metric(4, :)])
-    
+    fprintf('Errors for the normals (all): %.3f \n', mean([mean(error_metric(3, :)), error_metric(4, :)]))
+    fprintf('Errors for the depths (all): %.3f \n', 1000 * mean([mean(error_metric(1, :)), error_metric(2, :)]))
 else
     disp('Errors for the points')
-    error_metric(1:2, :)'
+    disp(1000 * error_metric(1:2, :)')
     disp('Errors for the normals')
     error_metric(3:4, :)'
 end

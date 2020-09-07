@@ -8,7 +8,9 @@ p = length(I1u(1,:));
 n = length(I1u(:,1))+1;
 J21a = zeros(n-1,p);
 J21b = J21a; J21c = J21a; J21d = J21a; J12a = J21a; J12b = J21a; J12c = J21a; J12d = J21a;
-H21uua = J21a; H21uub = J21a; H21uva = J21a; H21uvb = J21a; H21vva = J21a; H21vvb = J21a;
+H21uua = J21a; H21uub = J21a; 
+H21uva = J21a; H21uvb = J21a; 
+H21vva = J21a; H21vvb = J21a;
 
 % find the set of possible reference images
 idx = find(visb(1,:)==0);
@@ -46,11 +48,13 @@ for j = 1:length(id)
         if j > 1
             idx = visb(1,:)==0 & visb(id(j),:)==1 & visb(i,:)==1;
             dqu = bbs_eval(bbs, ctrlpts, q2(1,idx)',q2(2,idx)',1,0); dqv = bbs_eval(bbs, ctrlpts, q2(1,idx)',q2(2,idx)',0,1);
-            dquv = bbs_eval(bbs,ctrlpts,q2(1,idx)',q2(2,idx)',1,1); dquu = bbs_eval(bbs, ctrlpts, q2(1,idx)',q2(2,idx)',2,0);
+            dquv = bbs_eval(bbs,ctrlpts,q2(1,idx)',q2(2,idx)',1,1); 
+            dquu = bbs_eval(bbs, ctrlpts, q2(1,idx)',q2(2,idx)',2,0);
             dqvv = bbs_eval(bbs, ctrlpts, q2(1,idx)',q2(2,idx)',0,2);
         else
             dqu = bbs_eval(bbs, ctrlpts, q2(1,:)',q2(2,:)',1,0); dqv = bbs_eval(bbs, ctrlpts, q2(1,:)',q2(2,:)',0,1);
-            dquv = bbs_eval(bbs,ctrlpts,q2(1,:)',q2(2,:)',1,1); dquu = bbs_eval(bbs, ctrlpts, q2(1,:)',q2(2,:)',2,0);
+            dquv = bbs_eval(bbs,ctrlpts,q2(1,:)',q2(2,:)',1,1); 
+            dquu = bbs_eval(bbs, ctrlpts, q2(1,:)',q2(2,:)',2,0);
             dqvv = bbs_eval(bbs, ctrlpts, q2(1,:)',q2(2,:)',0,2);
         end
         
@@ -59,10 +63,11 @@ for j = 1:length(id)
         J12a(i-1,idx) = dqv(2,:)./(dqu(1,:).*dqv(2,:)-dqv(1,:).*dqu(2,:)); J12b(i-1,idx) = -dqu(2,:)./(dqu(1,:).*dqv(2,:)-dqv(1,:).*dqu(2,:));
         J12c(i-1,idx) = -dqv(1,:)./(dqu(1,:).*dqv(2,:)-dqv(1,:).*dqu(2,:)); J12d(i-1,idx) = dqu(1,:)./(dqu(1,:).*dqv(2,:)-dqv(1,:).*dqu(2,:));
         
-        H21uua(i-1,idx) = dquu(1,:); H21uub(i-1,idx) = dquu(2,:); H21uva(i-1,idx) = dquv(1,:);
-        H21uvb(i-1,idx) = dquv(2,:); H21vva(i-1,idx) = dqvv(1,:); H21vvb(i-1,idx) = dqvv(2,:);
+        H21uua(i-1,idx) = dquu(1,:); H21uub(i-1,idx) = dquu(2,:); 
+        H21uva(i-1,idx) = dquv(1,:); H21uvb(i-1,idx) = dquv(2,:); 
+        H21vva(i-1,idx) = dqvv(1,:); H21vvb(i-1,idx) = dqvv(2,:);
         
-        disp(fprintf('[ETA] Internal Rep error = %f',error));
+%         disp(fprintf('[ETA] Internal Rep error = %f',error));
     end
 end
 
