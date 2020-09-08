@@ -58,8 +58,9 @@ I1v = repmat(I1v(1, :), pairs_num, 1);
 if ~use_warp
     [I1u,I1v,I2u,I2v,J21a,J21b,J21c,J21d,J12a,J12b,J12c,J12d,H21uua,H21uub,H21uva,H21uvb,H21vva,H21vvb] = create_warps(I1u,I1v,I2u,I2v,visb,par);
 end
-
+disp('start computing normals...')
 toc
+
 
 % Christoffel Symbols (see equation 15 in the paper)
 %T1 = [-2*k1 -k2;-k2 0];
@@ -90,18 +91,18 @@ if strcmp(solver, 'infP') || strcmp(solver, 'iso')
     
     % remove points with no solution
     res_inf = res;
-%     idx = find(res(:,1)==0); res(idx,:)=[];
-%     u(:,idx) = []; v(:,idx) = []; u1(:,idx) = []; v1(:,idx) = []; e(:,idx)=[];e1(:,idx)=[];
-%     a(:,idx) = []; b(:,idx) = []; c(:,idx) = []; d(:,idx) = []; t1(:,idx) = []; t2(:,idx) = [];
-%     J12a(:,idx) = []; J12b(:,idx) = []; J12c(:,idx) = []; J12d(:,idx) = [];
-%     H21uua(:,idx) = []; H21uub(:,idx) = []; 
-%     H21uva(:,idx) = []; H21uvb(:,idx) = []; 
-%     H21vva(:,idx) = []; H21vvb(:,idx) = [];
+    idx = find(res(:,1)==0); res(idx,:)=[];
+    u(:,idx) = []; v(:,idx) = []; u1(:,idx) = []; v1(:,idx) = []; e(:,idx)=[];e1(:,idx)=[];
+    a(:,idx) = []; b(:,idx) = []; c(:,idx) = []; d(:,idx) = []; t1(:,idx) = []; t2(:,idx) = [];
+    J12a(:,idx) = []; J12b(:,idx) = []; J12c(:,idx) = []; J12d(:,idx) = [];
+    H21uua(:,idx) = []; H21uub(:,idx) = []; 
+    H21uva(:,idx) = []; H21uvb(:,idx) = []; 
+    H21vva(:,idx) = []; H21vvb(:,idx) = [];
 
     % recover first order derivatives on rest of the surfaces
     k1_inf = [res(:,1)';a.*repmat(res(:,1)',num-1,1) + b.*repmat(res(:,2)',num-1,1) + t1];
     k2_inf = [res(:,2)';c.*repmat(res(:,1)',num-1,1) + d.*repmat(res(:,2)',num-1,1) + t2];
-%     k1_inf(:,idx)=[]; k2_inf(:,idx)=[];
+    k1_inf(:,idx)=[]; k2_inf(:,idx)=[];
     k1_old = k1_inf; k2_old = k2_inf;
     % NEW Christoffel symbols
     % T1 = -2*k1 + k3*A;  T2 = k3*B;
@@ -152,12 +153,12 @@ if strcmp(solver, 'infP') || strcmp(solver, 'iso')
         k2_all = [res(:,2)';c.*repmat(res(:,1)',num-1,1) + d.*repmat(res(:,2)',num-1,1) + t2];
     end
     
-%     idx = find(visb(1,:)==0);
-%     for i = 1: length(idx)
-%         id = find(visb(1:end,idx(i))>0);
-%         I2u(id(1)-1,idx(i)) = I1u(1,idx(i)); I2v(id(1)-1,idx(i)) = I1v(1,idx(i)); I1u(:,idx(i)) = 0; I1v(:,idx(i)) = 0;
-%         k1_all(id(1),idx(i)) = k1_all(1,idx(i)); k2_all(id(1),idx(i)) = k2_all(1,idx(i)); k1_all(1,idx(i)) = 0; k2_all(1,idx(i)) = 0;
-%     end
+    idx = find(visb(1,:)==0);
+    for i = 1: length(idx)
+        id = find(visb(1:end,idx(i))>0);
+        I2u(id(1)-1,idx(i)) = I1u(1,idx(i)); I2v(id(1)-1,idx(i)) = I1v(1,idx(i)); I1u(:,idx(i)) = 0; I1v(:,idx(i)) = 0;
+        k1_all(id(1),idx(i)) = k1_all(1,idx(i)); k2_all(id(1),idx(i)) = k2_all(1,idx(i)); k1_all(1,idx(i)) = 0; k2_all(1,idx(i)) = 0;
+    end
 
     u_all = [I1u(1,:);I2u]; v_all = [I1v(1,:);I2v];
 
@@ -169,9 +170,9 @@ if strcmp(solver, 'infP') || strcmp(solver, 'iso')
     N = [N1(:),N2(:),N3(:)]';
     N_res = reshape(N(:),3*num,length(u_all));
 
-%     % find indices with no solution
-%     idx = find(res(:,1)==0);
-%     N_res(:,idx) = []; u_all(:,idx) = []; v_all(:,idx) = [];
+    % find indices with no solution
+    idx = find(res(:,1)==0);
+    N_res(:,idx) = []; u_all(:,idx) = []; v_all(:,idx) = [];
 
 end
 
@@ -181,13 +182,24 @@ if strcmp(solver, 'fastDiffH')
     [vec_W, vec_W_invt] = compute_W(I1u, I1v, I2u, I2v, a, b, c, d, t1, t2);
     [na, nb, ~, ~] = compute_normal(vec_W, vec_W_invt);
     
+    err_tol = 0;
+    
     for i = 1:num_p
         n1_all = reshape(na(:, i, :), pairs_num, 3)';
         n2_all = reshape(nb(:, i, :), pairs_num, 3)';
-        N = cross(n1_all, n2_all)';
+        x = [I1u(1, i);I1v(1, i);1];
+        mask1 = (n1_all(3, :) ./ (x' * n1_all)) > -err_tol; 
+        mask2 = (n2_all(3, :) ./ (x' * n2_all)) > -err_tol; 
         
-        [~, ~, V] = svd(N' * N); n = V(:, end);
+        n_single = [n1_all(:, mask1 & (~mask2)), n2_all(:, (~mask1) & mask2)];
+        P_single = ortho_projector(n_single);
 
+        mask = mask1 & mask2;
+        n1_all = n1_all(:, mask);
+        n2_all = n2_all(:, mask);    
+        N = cross(n1_all, n2_all)';
+        [~, ~, V] = svd(N' * N); n = V(:, end);
+     
 %         w = 1;
 %         for z = 1:10
 %             N_ = sqrt(w) .* N;
@@ -198,25 +210,14 @@ if strcmp(solver, 'fastDiffH')
         
 %         N = [n1_all, n2_all];
 %         [U, ~, ~] = svd(N * N'); n = U(:, 1); 
-
-        N_res(1:3, i) = n;  
         
         iter_max = 1;
 %         col_n = zeros(pairs_num, 3);
         for z = 1:iter_max
-            P = zeros(3 * pairs_num, 3);
-            for k = 1:pairs_num
-                n1 = n1_all(:, k);
-                n2 = n2_all(:, k);
-
-                if abs(n' * n1) > abs(n' * n2)
-                    P((3 * (k - 1) + 1):(3 * k), :) = eye(3) - n1 * n1';
-%                     col_n(k, :) = n1;
-                else
-                    P((3 * (k - 1) + 1):(3 * k), :) = eye(3) - n2 * n2';
-%                     col_n(k, :) = n2;
-                end
-            end
+            dot1 = abs(n' * n1_all); dot2 = abs(n' * n2_all);
+            mask = dot1 > dot2;
+            candidate = [n1_all(:, mask), n2_all(:, ~mask)];
+            P = [ortho_projector(candidate); P_single];
 
 %             [U,S,V] = svd(P);
 %             n = V(:, end);
@@ -231,6 +232,9 @@ if strcmp(solver, 'fastDiffH')
                 w = 1 ./ sqrt(tem(1:3:end) .^ 2 + tem(2:3:end) .^ 2 + tem(3:3:end) .^ 2);
                 w = [w, w, w]';
                 w = w(:);
+%                 if any(isinf(w))
+%                     break
+%                 end
             end
         end
 %         n = mean(col_n)'; n = n / norm(n);

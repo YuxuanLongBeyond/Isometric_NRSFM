@@ -14,10 +14,10 @@ addpath(genpath('sparseinv'));
 addpath(genpath('utils'));
 addpath(genpath('l1magic'));
 
-dataset = 'Kinect_paper.mat';
+% dataset = 'Kinect_paper.mat';
 % dataset = 'rug_trun.mat';
 % dataset = 'cat.mat';
-% dataset = 'tshirt.mat';
+dataset = 'tshirt.mat';
 
 % dataset = 'warps_plane1.mat';
 % dataset = 'warps_plane2.mat';
@@ -72,8 +72,8 @@ mean(T_poly) + mean(T_sel) + mean(T_norm)
 %% test multiple view methods
 % solver = 'infP';
 % solver = 'iso';
-solver = 'polyH';
-% solver = 'fastDiffH';
+% solver = 'polyH';
+solver = 'fastDiffH';
 
 tic
 [err_n, err_p] = test_multiple_view(dataset, pixel_noise, f, solver, grid, show_plot, use_warp);
