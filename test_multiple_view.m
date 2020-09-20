@@ -1,10 +1,15 @@
-function [err_n, err_p] = test_multiple_view(dataset, pixel_noise, f, solver, grid, show_plot, use_warp)
+function [err_n, err_p] = test_multiple_view(dataset, pixel_noise, f, solver, grid, show_plot, use_warp, views_num)
 
 dataset = ['./warps_data/', dataset];
 if use_warp
     load(dataset);
 else
     load(dataset, 'qgth', 'Pgth', 'Ngth', 'K');
+end
+
+if ~strcmp(views_num, 'all')
+    qgth = qgth(1:views_num);
+    Pgth = Pgth(1:3*views_num, :);
 end
 
 pairs_num = length(qgth) - 1;
@@ -19,6 +24,9 @@ visb = ones(num, size(q_n, 2));
 %%% GROUND TRUTH NORMALS %%%%%
 if exist('Ngth','var') == 0
     Ngth = create_gth_normals(Pgth,q_n,num);
+end
+if ~strcmp(views_num, 'all')
+    Ngth = Ngth(1:3*views_num, :);
 end
 
 %%% PARAMETERS %%%%%
@@ -57,6 +65,23 @@ I1v = repmat(I1v(1, :), pairs_num, 1);
 
 if ~use_warp
     [I1u,I1v,I2u,I2v,J21a,J21b,J21c,J21d,J12a,J12b,J12c,J12d,H21uua,H21uub,H21uva,H21uvb,H21vva,H21vvb] = create_warps(I1u,I1v,I2u,I2v,visb,par);
+else
+    if ~strcmp(views_num, 'all')
+        J21a = J21a(1:(views_num - 1), :);
+        J21b = J21b(1:(views_num - 1), :);
+        J21c = J21c(1:(views_num - 1), :);
+        J21d = J21d(1:(views_num - 1), :);
+        J12a = J12a(1:(views_num - 1), :);
+        J12b = J12b(1:(views_num - 1), :);
+        J12c = J12c(1:(views_num - 1), :);
+        J12d = J12d(1:(views_num - 1), :);
+        H21uua = H21uua(1:(views_num - 1), :);
+        H21uub = H21uub(1:(views_num - 1), :);
+        H21uva = H21uva(1:(views_num - 1), :);
+        H21uvb = H21uvb(1:(views_num - 1), :);
+        H21vva = H21vva(1:(views_num - 1), :);
+        H21vvb = H21vvb(1:(views_num - 1), :);
+    end
 end
 disp('start computing normals...')
 toc
