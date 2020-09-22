@@ -17,14 +17,14 @@ addpath(genpath('l1magic'));
 % dataset = 'Kinect_paper.mat';
 % dataset = 'rug_trun.mat';
 % dataset = 'cat.mat';
-% dataset = 'tshirt.mat';
+dataset = 'tshirt.mat';
 
 % dataset = 'warps_plane1.mat';
 % dataset = 'warps_plane2.mat';
 
 % dataset = 'warps_plane_trial11.mat';
 
-dataset = 'warps_cylinder1.mat';
+% dataset = 'warps_cylinder1.mat';
 % dataset = 'warps_cylinder2.mat';
 % dataset = 'warps_cylinder3.mat';
 
@@ -41,6 +41,7 @@ if strcmp(dataset(1:5), 'warps')
     grid = 0;
 end
 
+
 %% test two view methods
 decomp = 1;
 method = struct;
@@ -49,7 +50,7 @@ choice = 0;
 % 0 for local approach: locally select the shape parameters
 % 1 for global approach: select the solution by maximizing the consistency
 % 2 for least median: select the least median (not a two-view method)
-
+% 3 for least dot product
 
 %%% local approach
 % measure = 'msa'; % minimum surface area
@@ -62,9 +63,7 @@ use_visb = 1; % flag for applying visibility condition
 solver = 'admm';
 % solver = 'qp';
 
-direct_substitute = 0;
-second_view_id = 2;
-[error_metric, T_poly, T_sel, T_norm] = test_two_view(dataset, pixel_noise, f, show_plot, decomp, choice, measure, use_visb, solver, direct_substitute, second_view_id, grid, use_warp);
+[error_metric, T_poly, T_sel, T_norm] = test_two_view(dataset, pixel_noise, f, show_plot, decomp, choice, measure, use_visb, solver, grid, use_warp);
 disp('Average time taken to reconstruct one pair of views:')
 mean(T_poly) + mean(T_sel) + mean(T_norm)
 err_n_ln = error_metric(3, :);

@@ -1,4 +1,4 @@
-function Ngth = create_gth_normals(P2_n,q_n,n)
+function Ngth = create_gth_normals(P2_n,q_n,n, visb)
 
 % create Ground truth
 er = 1e-5;
@@ -6,7 +6,8 @@ t= 1e-3;
 nC = 40;
 Ngth = zeros(size(P2_n));
 for i=1:n
-    idx = find(q_n(2*(i-1)+1,:)~=0);
+%     idx = find(q_n(2*(i-1)+1,:)~=0);
+    idx = visb(i, :) == 1;
     umin = min(q_n(2*(i-1)+1,idx))-t; umax = max(q_n(2*(i-1)+1,idx))+t;
     vmin = min(q_n(2*(i-1)+2,idx))-t; vmax = max(q_n(2*(i-1)+2,idx))+t;
     

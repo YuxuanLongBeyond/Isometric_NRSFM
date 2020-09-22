@@ -23,7 +23,7 @@ visb = ones(num, size(q_n, 2));
 
 %%% GROUND TRUTH NORMALS %%%%%
 if exist('Ngth','var') == 0
-    Ngth = create_gth_normals(Pgth,q_n,num);
+    Ngth = create_gth_normals(Pgth,q_n,num, visb);
 end
 if ~strcmp(views_num, 'all')
     Ngth = Ngth(1:3*views_num, :);

@@ -75,7 +75,8 @@ end
 idx = find(visb(1,:)==0);
 for i = 1: length(idx)
     id = find(visb(1:end,idx(i))>0);
-    I1u(:,idx(i)) = I2u(id(1)-1,idx(i)); I1v(:,idx(i)) = I2v(id(1)-1,idx(i)); I2u(id(1)-1,idx(i)) = 0; I2v(id(1)-1,idx(i)) = 0;
+    I1u(:,idx(i)) = I2u(id(1)-1,idx(i)); I1v(:,idx(i)) = I2v(id(1)-1,idx(i)); 
+    I2u(id(1)-1,idx(i)) = 0; I2v(id(1)-1,idx(i)) = 0;
     J21a(1,idx(i)) = J21a(id(1)-1,idx(i)); J21a(id(1)-1,idx(i)) = 0;
     J21b(1,idx(i)) = J21b(id(1)-1,idx(i)); J21b(id(1)-1,idx(i)) = 0;
     J21c(1,idx(i)) = J21c(id(1)-1,idx(i)); J21c(id(1)-1,idx(i)) = 0;

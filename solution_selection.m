@@ -56,6 +56,50 @@ if method.method == 0
     end
 end
 
+if method.method == 3
+    nonnan_mask = ~isnan(k1);
+    k1 = reshape(k1(nonnan_mask), 2, n); k2 = reshape(k2(nonnan_mask), 2, n);
+    I1u_all = repmat(I1u, 2, 1); I1v_all = repmat(I1v, 2, 1);
+    k3 = 1 - I1u_all .* k1 - I1v_all .* k2;   
+    
+    n1 = [k1(1, :); k2(1, :); k3(1, :)];
+    n2 = [k1(2, :); k2(2, :); k3(2, :)];
+    
+    n1 = n1 ./ sqrt(sum(n1 .^ 2));
+    n2 = n2 ./ sqrt(sum(n2 .^ 2));
+    
+    F1 = [I1u; I1v]; % image coordinates on first view
+    
+    % compute distance maps for image coordinates
+    dist_map1 = zeros(n, n);
+    for i = 1:n
+        dist_map1(:, i) = sum((F1 - F1(:, i)) .^ 2);
+    end
+    avg_dist1 = sum(sum(dist_map1)) / (n ^ 2 - n);
+    thre1 = method.ratio * avg_dist1;
+    dist_mask1 = dist_map1 <= thre1;
+    for i = 1:n
+        ind = find(nonnan_mask(:, i));
+        vertices = find(dist_mask1(:, 1));
+        
+        n1i = n1(:, i);
+        n2i = n2(:, i);
+        ngN1 = n1(:,vertices);
+        ngN2 = n2(:,vertices);
+       
+        dotsum1 = sum((n1i'*ngN1)+(n1i'*ngN2));
+        dotsum2 = sum((n2i'*ngN1)+(n2i'*ngN2)); 
+        if dotsum1>dotsum2
+            mask(ind(1), i) = 1;
+        else
+            mask(ind(2), i) = 1;
+        end
+        
+    end
+    
+    
+end
+
 if method.method == 1
     I1u_all = repmat(I1u, 6, 1); I1v_all = repmat(I1v, 6, 1);
     I2u_all = repmat(I2u, 6, 1); I2v_all = repmat(I2v, 6, 1);
@@ -64,7 +108,6 @@ if method.method == 1
     sigma = method.sigma;
     ratio = method.ratio;
     
-
     F1 = [I1u; I1v]; % image coordinates on first view
     F2 = [I2u; I2v]; % image coordinates on second view
 

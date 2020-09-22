@@ -1,4 +1,4 @@
-function [error_metric, T_poly, T_sel, T_norm] = test_two_view(dataset, pixel_noise, f, show_plot, decomp, choice, measure, use_visb, solver, direct_substitute, second_view_id, grid, use_warp)
+function [error_metric, T_poly, T_sel, T_norm] = test_two_view(dataset, pixel_noise, f, show_plot, decomp, choice, measure, use_visb, solver, grid, use_warp)
 
 method = struct;
 
@@ -38,10 +38,12 @@ for i=1:n
 end
 %visiblity matrix: remove points visible in less than 3 views
 visb = ones(n, size(q_n, 2));
+% visb(1, 2:5) = 0;
+% q_n(1:2, 2:5) = 0;
 
 %%% GROUND TRUTH NORMALS %%%%%
 if exist('Ngth','var') == 0
-    Ngth = create_gth_normals(Pgth,q_n,n);
+    Ngth = create_gth_normals(Pgth,q_n,n, visb);
 end
 
 %%% PARAMETERS %%%%%
@@ -141,227 +143,151 @@ method.first_cubic_coef = first_cubic_coef;
 method.t_all = t_all;
 method.J21_all = J21_all;
 
-
-if direct_substitute
-
-    % start solving all the cubics
-    view_id = second_view_id;
-    method.view_id = view_id;
-    I2u_tem = I2u(view_id - 1, :); I2v_tem = I2v(view_id - 1, :);
-
-    % solve x1 and x2
-    eq = eq_coef{view_id - 1};
-    f1 = f1_coef{view_id - 1};
-    f2 = f2_coef{view_id - 1};
-    [x1, x2] = solve_cubic(eq, f1, f2, err);
-    %%% Note that we replace all complex numbers with NaN
-    %%% there are 6 roots, so x1 and x2 have 6 rows of solution
-
-    J12a_all = repmat(J12a(view_id - 1, :), 6, 1); J12b_all = repmat(J12b(view_id - 1, :), 6, 1);
-    J12c_all = repmat(J12c(view_id - 1, :), 6, 1); J12d_all = repmat(J12d(view_id - 1, :), 6, 1);
-
-    % on the first view
-    k1 = J12a_all .* x1 + J12b_all .* x2;
-    k2 = J12c_all .* x1 + J12d_all .* x2;
-
-    % on the second view
-    k1_ = x1 + repmat(t_all{view_id - 1}(1, :), 6, 1);
-    k2_ = x2 + repmat(t_all{view_id - 1}(2, :), 6, 1);
     
+T_poly = zeros(1, length(view_id_list));
+T_sel = zeros(1, length(view_id_list));
+T_norm = zeros(1, length(view_id_list));
+
+if decomp
+    % coeff of k1       % coeff of k2        % constant term
+    T1_12_k1 = -J21c;   T1_12_k2 = -J21d;    T1_12_c = (J12a.*H21uva + J12c.*H21uvb);%(H21vvb./J21d)/2;
+    T2_12_k1 = -J21a;   T2_12_k2 = -J21b;    T2_12_c = (J12b.*H21uva + J12d.*H21uvb);%(H21uub./J21b)/2;
+
+    % k1b = -T2_12 = a*k1 + b*k2 + t1;
+    % k2b = -T1_12 = c*k1 + d*k2 + t2;
+    a = -T2_12_k1; b = -T2_12_k2; c = -T1_12_k1; d = -T1_12_k2; t1 = -T2_12_c; t2 = -T1_12_c;
+
+    [vec_W, vec_W_invt] = compute_W(repmat(I1u, pairs_num, 1), repmat(I1v, pairs_num, 1), I2u, I2v, a, b, c, d, t1, t2);
+    [na, nb, na_, nb_] = compute_normal(vec_W, vec_W_invt);
+end
+
+count = 1;
+% start solving all the cubics
+for view_id = view_id_list
+    idx = visb(1, :) == 1 & visb(view_id, :) == 1;
+    
+    method.view_id = view_id;
+    I1u_tem = I1u(1, idx); I1v_tem = I1v(1, idx);
+    I2u_tem = I2u(view_id - 1, idx); I2v_tem = I2v(view_id - 1, idx);
+    t1 = t_all{view_id - 1}(1, idx);
+    t2 = t_all{view_id - 1}(2, idx);
+
+    Ngth_tem = [Ngth(1:3, :); Ngth((view_id * 3 - 2):(view_id * 3), :)];
+    Pgth_tem = [Pgth(1:3, :); Pgth((view_id * 3 - 2):(view_id * 3), :)];
+    q_n = [qgth{1}(1:2, :); qgth{view_id}(1:2, :)];
+
+    tic
+    if decomp
+        num_p = length(t1);
+
+        na_sub = reshape(na(view_id - 1, idx, :), num_p, 3)';
+        nb_sub = reshape(nb(view_id - 1, idx, :), num_p, 3)';
+        tem1 = I1u_tem .* na_sub(1, :) + I1v_tem .* na_sub(2, :) + na_sub(3, :);
+        tem2 = I1u_tem .* nb_sub(1, :) + I1v_tem .* nb_sub(2, :) + nb_sub(3, :);
+        k1 = [na_sub(1, :) ./ tem1;
+            nb_sub(1, :) ./ tem2];
+        k2 = [na_sub(2, :) ./ tem1;
+            nb_sub(2, :) ./ tem2];
+
+        na_sub_ = reshape(na_(view_id - 1, idx, :), num_p, 3)';
+        nb_sub_ = reshape(nb_(view_id - 1, idx, :), num_p, 3)';
+        tem1_ = I2u_tem .* na_sub_(1, :) + I2v_tem .* na_sub_(2, :) + na_sub_(3, :);
+        tem2_ = I2u_tem .* nb_sub_(1, :) + I2v_tem .* nb_sub_(2, :) + nb_sub_(3, :);
+        k1_ = [na_sub_(1, :) ./ tem1_;
+            nb_sub_(1, :) ./ tem2_];
+        k2_ = [na_sub_(2, :) ./ tem1_;
+            nb_sub_(2, :) ./ tem2_];
+
+        tem = nan(4, num_p);
+        k1 = [tem; k1];
+        k2 = [tem; k2];
+        k1_ = [tem; k1_];
+        k2_ = [tem; k2_];
+
+
+    else
+        % solve x1 and x2
+        eq = eq_coef{view_id - 1};
+        f1 = f1_coef{view_id - 1};
+        f2 = f2_coef{view_id - 1};
+
+        [x1, x2] = solve_cubic(eq, f1, f2, err);
+
+        %%% Note that we replace all complex numbers with NaN
+        %%% there are 6 roots, so x1 and x2 have 6 rows of solution
+
+        J12a_all = repmat(J12a(view_id - 1, :), 6, 1); J12b_all = repmat(J12b(view_id - 1, :), 6, 1);
+        J12c_all = repmat(J12c(view_id - 1, :), 6, 1); J12d_all = repmat(J12d(view_id - 1, :), 6, 1);
+
+        % on the first view
+        k1 = J12a_all .* x1 + J12b_all .* x2;
+        k2 = J12c_all .* x1 + J12d_all .* x2;
+
+        % on the second view
+        k1_ = x1 + repmat(t1, 6, 1);
+        k2_ = x2 + repmat(t2, 6, 1);
+        
+        k1 = k1(:, idx); k2 = k2(:, idx);
+        k1_ = k1_(:, idx); k2_ = k2_(:, idx);
+    end
+    T_poly(count) = toc;
+
     % compute the mask for selecting the desirable solutions
-    mask = solution_selection(I1u, I1v, I2u_tem, I2v_tem, k1, k2, k1_, k2_, method);
+    tic
+    mask = solution_selection(I1u_tem, I1v_tem, I2u_tem, I2v_tem, k1, k2, k1_, k2_, method);
+    T_sel(count) = toc;
 
     % gather k1 and k2 for both views
-    k1 = k1(mask)'; % k1_ = k1_(mask)';
-    k2 = k2(mask)'; % k2_ = k2_(mask)';
-%     k1_all = [k1; k1_];
-%     k2_all = [k2; k2_];
-    count = 1;
-    for view_id = view_id_list
-        Ngth_tem = [Ngth(1:3, :); Ngth((view_id * 3 - 2):(view_id * 3), :)];
-        Pgth_tem = [Pgth(1:3, :); Pgth((view_id * 3 - 2):(view_id * 3), :)];
-        q_n = [qgth{1}(1:2, :); qgth{view_id}(1:2, :)];
-        
-        u_all = [I1u(1,:);I2u(view_id - 1, :)]; v_all = [I1v(1,:);I2v(view_id - 1, :)];
+    k1_all = [k1(mask)'; k1_(mask)'];
+    k2_all = [k2(mask)'; k2_(mask)'];
 
-        k1_ = J12a(view_id - 1, :) .* k1 + J12b(view_id - 1, :) .* k2 + t_all{view_id - 1}(1, :);
-        k2_ = J12c(view_id - 1, :) .* k1 + J12d(view_id - 1, :) .* k2 + t_all{view_id - 1}(2, :);
+    u_all = [I1u(1,idx);I2u_tem]; v_all = [I1v(1,idx);I2v_tem];
 
-        k1_all = [k1; k1_];
-        k2_all = [k2; k2_];
-        
-        % find normals on all surfaces N= [N1;N2;N3]
-        N1 = k1_all; N2 = k2_all; N3 = 1-u_all.*k1_all-v_all.*k2_all;
-        n = sqrt(N1.^2+N2.^2+N3.^2);
-        N1 = N1./n ; N2 = N2./n; N3 = N3./n;
+    % find normals on all surfaces N= [N1;N2;N3]
+    N1 = k1_all; N2 = k2_all; N3 = 1-u_all.*k1_all-v_all.*k2_all;
+    n = sqrt(N1.^2+N2.^2+N3.^2);
+    N1 = N1./n ; N2 = N2./n; N3 = N3./n;
 
-        N = [N1(:),N2(:),N3(:)]';
-        N_res = reshape(N(:),3*num, length(u_all));
+    N = [N1(:),N2(:),N3(:)]';
+    N_res = reshape(N(:),3*num, size(u_all, 2));
+    
+    N_tem = zeros(3 * num, length(idx));
+    N_tem(:, idx) = N_res;
+    N_res = N_tem;
 
-        % Integrate normals to find depth
-        P_grid=calculate_depth(N_res,u_all,v_all,1e0);
-        % compare with ground truth
-        [P2,err_p] = compare_with_Pgth(P_grid,u_all,v_all,q_n,Pgth_tem);
-        [N,err_n] = compare_with_Ngth(P2,q_n,Ngth_tem);
-        error_metric(1:2, count) = mean(err_p');
-        error_metric(3:4, count) = mean(err_n');
+    tic
+    % Integrate normals to find depth
+    P_grid = calculate_depth(N_res,u_all,v_all,1e0);
 
-        if show_plot
-            figure();
-    %         ax = gca;
-    %         ax.ZAxis.TickLabelFormat = '%.2f';        
+    % compare with ground truth
+    [P2,err_p] = compare_with_Pgth(P_grid,u_all,v_all,q_n,Pgth_tem);
+    [N,err_n] = compare_with_Ngth(P2,q_n,Ngth_tem);
+    T_norm(count) = toc;
 
-            draw_surface(Pgth_tem(1:3, :), 'g')
+    error_metric(1:2, count) = mean(err_p');
+    error_metric(3:4, count) = mean(err_n');
 
-            hold on
-            draw_surface(P2(1:3, :), 'r')
-            hold off
-            figure();
-            draw_surface(Pgth_tem(4:6, :), 'g')
-            hold on
-            draw_surface(P2(4:6, :), 'r')
-            hold off
-        end
-        count = count + 1;
+    if show_plot
+        figure();
+%         ax = gca;
+%         ax.ZAxis.TickLabelFormat = '%.2f';        
+
+        draw_surface(Pgth_tem(1:3, :), 'g')
+
+        hold on
+        draw_surface(P2(1:3, :), 'r')
+        hold off
+        figure();
+        draw_surface(Pgth_tem(4:6, :), 'g')
+        hold on
+        draw_surface(P2(4:6, :), 'r')
+        hold off
     end
-    %     disp('Frobenius norm of errors of the computed normals')
-    %     disp(norm(-N_res - Ngth_tem))
-else
-    
-    T_poly = zeros(1, length(view_id_list));
-    T_sel = zeros(1, length(view_id_list));
-    T_norm = zeros(1, length(view_id_list));
-    
-    if decomp
-        % coeff of k1       % coeff of k2        % constant term
-        T1_12_k1 = -J21c;   T1_12_k2 = -J21d;    T1_12_c = (J12a.*H21uva + J12c.*H21uvb);%(H21vvb./J21d)/2;
-        T2_12_k1 = -J21a;   T2_12_k2 = -J21b;    T2_12_c = (J12b.*H21uva + J12d.*H21uvb);%(H21uub./J21b)/2;
-
-        % k1b = -T2_12 = a*k1 + b*k2 + t1;
-        % k2b = -T1_12 = c*k1 + d*k2 + t2;
-        a = -T2_12_k1; b = -T2_12_k2; c = -T1_12_k1; d = -T1_12_k2; t1 = -T2_12_c; t2 = -T1_12_c;
-
-        [vec_W, vec_W_invt] = compute_W(repmat(I1u, pairs_num, 1), repmat(I1v, pairs_num, 1), I2u, I2v, a, b, c, d, t1, t2);
-        [na, nb, na_, nb_] = compute_normal(vec_W, vec_W_invt);
-    end
-    
-    count = 1;
-    % start solving all the cubics
-    for view_id = view_id_list
-        method.view_id = view_id;
-        I2u_tem = I2u(view_id - 1, :); I2v_tem = I2v(view_id - 1, :);
-        t1 = t_all{view_id - 1}(1, :);
-        t2 = t_all{view_id - 1}(2, :);
-
-        Ngth_tem = [Ngth(1:3, :); Ngth((view_id * 3 - 2):(view_id * 3), :)];
-        Pgth_tem = [Pgth(1:3, :); Pgth((view_id * 3 - 2):(view_id * 3), :)];
-        q_n = [qgth{1}(1:2, :); qgth{view_id}(1:2, :)];
-
-        tic
-        if decomp
-            num_p = length(t1);
-            
-            na_sub = reshape(na(view_id - 1, :, :), num_p, 3)';
-            nb_sub = reshape(nb(view_id - 1, :, :), num_p, 3)';
-            tem1 = I1u .* na_sub(1, :) + I1v .* na_sub(2, :) + na_sub(3, :);
-            tem2 = I1u .* nb_sub(1, :) + I1v .* nb_sub(2, :) + nb_sub(3, :);
-            k1 = [na_sub(1, :) ./ tem1;
-                nb_sub(1, :) ./ tem2];
-            k2 = [na_sub(2, :) ./ tem1;
-                nb_sub(2, :) ./ tem2];
-            
-            na_sub_ = reshape(na_(view_id - 1, :, :), num_p, 3)';
-            nb_sub_ = reshape(nb_(view_id - 1, :, :), num_p, 3)';
-            tem1_ = I2u_tem .* na_sub_(1, :) + I2v_tem .* na_sub_(2, :) + na_sub_(3, :);
-            tem2_ = I2u_tem .* nb_sub_(1, :) + I2v_tem .* nb_sub_(2, :) + nb_sub_(3, :);
-            k1_ = [na_sub_(1, :) ./ tem1_;
-                nb_sub_(1, :) ./ tem2_];
-            k2_ = [na_sub_(2, :) ./ tem1_;
-                nb_sub_(2, :) ./ tem2_];
-            
-            tem = nan(4, num_p);
-            k1 = [tem; k1];
-            k2 = [tem; k2];
-            k1_ = [tem; k1_];
-            k2_ = [tem; k2_];
-            
-            
-        else
-            % solve x1 and x2
-            eq = eq_coef{view_id - 1};
-            f1 = f1_coef{view_id - 1};
-            f2 = f2_coef{view_id - 1};
-            
-            [x1, x2] = solve_cubic(eq, f1, f2, err);
-            
-            %%% Note that we replace all complex numbers with NaN
-            %%% there are 6 roots, so x1 and x2 have 6 rows of solution
-
-            J12a_all = repmat(J12a(view_id - 1, :), 6, 1); J12b_all = repmat(J12b(view_id - 1, :), 6, 1);
-            J12c_all = repmat(J12c(view_id - 1, :), 6, 1); J12d_all = repmat(J12d(view_id - 1, :), 6, 1);
-
-            % on the first view
-            k1 = J12a_all .* x1 + J12b_all .* x2;
-            k2 = J12c_all .* x1 + J12d_all .* x2;
-
-            % on the second view
-            k1_ = x1 + repmat(t1, 6, 1);
-            k2_ = x2 + repmat(t2, 6, 1);
-        end
-        T_poly(count) = toc;
-        
-        % compute the mask for selecting the desirable solutions
-        tic
-        mask = solution_selection(I1u, I1v, I2u_tem, I2v_tem, k1, k2, k1_, k2_, method);
-        T_sel(count) = toc;
-        
-        % gather k1 and k2 for both views
-        k1_all = [k1(mask)'; k1_(mask)'];
-        k2_all = [k2(mask)'; k2_(mask)'];
-
-        u_all = [I1u(1,:);I2u_tem]; v_all = [I1v(1,:);I2v_tem];
-
-        % find normals on all surfaces N= [N1;N2;N3]
-        N1 = k1_all; N2 = k2_all; N3 = 1-u_all.*k1_all-v_all.*k2_all;
-        n = sqrt(N1.^2+N2.^2+N3.^2);
-        N1 = N1./n ; N2 = N2./n; N3 = N3./n;
-
-        N = [N1(:),N2(:),N3(:)]';
-        N_res = reshape(N(:),3*num, size(u_all, 2));
-
-        tic
-        % Integrate normals to find depth
-        P_grid = calculate_depth(N_res,u_all,v_all,1e0);
-        
-        % compare with ground truth
-        [P2,err_p] = compare_with_Pgth(P_grid,u_all,v_all,q_n,Pgth_tem);
-        [N,err_n] = compare_with_Ngth(P2,q_n,Ngth_tem);
-        T_norm(count) = toc;
-        
-        error_metric(1:2, count) = mean(err_p');
-        error_metric(3:4, count) = mean(err_n');
-
-        if show_plot
-            figure();
-    %         ax = gca;
-    %         ax.ZAxis.TickLabelFormat = '%.2f';        
-
-            draw_surface(Pgth_tem(1:3, :), 'g')
-
-            hold on
-            draw_surface(P2(1:3, :), 'r')
-            hold off
-            figure();
-            draw_surface(Pgth_tem(4:6, :), 'g')
-            hold on
-            draw_surface(P2(4:6, :), 'r')
-            hold off
-        end
-    %     disp('Frobenius norm of errors of the computed normals')
+%     disp('Frobenius norm of errors of the computed normals')
 %         disp(norm(-N_res - Ngth_tem))
-        count = count + 1;
-    end
+    count = count + 1;
 end
+
 
 
 
