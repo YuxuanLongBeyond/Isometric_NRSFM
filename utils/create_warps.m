@@ -1,4 +1,4 @@
-function [I1u,I1v,I2u,I2v,J21a,J21b,J21c,J21d,J12a,J12b,J12c,J12d,H21uua,H21uub,H21uva,H21uvb,H21vva,H21vvb] = create_warps(I1u,I1v,I2u,I2v,visb,par)
+function [I1u,I1v,I2u,I2v,J21a,J21b,J21c,J21d,J12a,J12b,J12c,J12d,H21uua,H21uub,H21uva,H21uvb,H21vva,H21vvb] = create_warps(I1u,I1v,I2u,I2v,visb,par, two_view)
 
 % create Ground truth
 er = 1e-4;
@@ -21,6 +21,10 @@ for i = 1: length(idx)
 end
 id = unique(id2);
 id = [1,id];
+
+if two_view
+    id = [1];
+end
 
 Iu = [I1u(1,:);I2u]; Iv = [I1v(1,:);I2v];
 
@@ -71,26 +75,29 @@ for j = 1:length(id)
     end
 end
 
-% arrange warps according to reference and data
-idx = find(visb(1,:)==0);
-for i = 1: length(idx)
-    id = find(visb(1:end,idx(i))>0);
-    I1u(:,idx(i)) = I2u(id(1)-1,idx(i)); I1v(:,idx(i)) = I2v(id(1)-1,idx(i)); 
-    I2u(id(1)-1,idx(i)) = 0; I2v(id(1)-1,idx(i)) = 0;
-    J21a(1,idx(i)) = J21a(id(1)-1,idx(i)); J21a(id(1)-1,idx(i)) = 0;
-    J21b(1,idx(i)) = J21b(id(1)-1,idx(i)); J21b(id(1)-1,idx(i)) = 0;
-    J21c(1,idx(i)) = J21c(id(1)-1,idx(i)); J21c(id(1)-1,idx(i)) = 0;
-    J21d(1,idx(i)) = J21d(id(1)-1,idx(i)); J21d(id(1)-1,idx(i)) = 0;
-    
-    J12a(1,idx(i)) = J12a(id(1)-1,idx(i)); J12a(id(1)-1,idx(i)) = 0;
-    J12b(1,idx(i)) = J12b(id(1)-1,idx(i)); J12b(id(1)-1,idx(i)) = 0;
-    J12c(1,idx(i)) = J12c(id(1)-1,idx(i)); J12c(id(1)-1,idx(i)) = 0;
-    J12d(1,idx(i)) = J12d(id(1)-1,idx(i)); J12d(id(1)-1,idx(i)) = 0;
-    
-    H21uua(1,idx(i)) = H21uua(id(1)-1,idx(i)); H21uua(id(1)-1,idx(i)) = 0;
-    H21uub(1,idx(i)) = H21uub(id(1)-1,idx(i)); H21uub(id(1)-1,idx(i)) = 0;
-    H21uva(1,idx(i)) = H21uva(id(1)-1,idx(i)); H21uva(id(1)-1,idx(i)) = 0;
-    H21uvb(1,idx(i)) = H21uvb(id(1)-1,idx(i)); H21uvb(id(1)-1,idx(i)) = 0;
-    H21vva(1,idx(i)) = H21vva(id(1)-1,idx(i)); H21vva(id(1)-1,idx(i)) = 0;
-    H21vvb(1,idx(i)) = H21vvb(id(1)-1,idx(i)); H21vvb(id(1)-1,idx(i)) = 0;
+if ~two_view
+
+    % arrange warps according to reference and data
+    idx = find(visb(1,:)==0);
+    for i = 1: length(idx)
+        id = find(visb(1:end,idx(i))>0);
+        I1u(:,idx(i)) = I2u(id(1)-1,idx(i)); I1v(:,idx(i)) = I2v(id(1)-1,idx(i)); 
+        I2u(id(1)-1,idx(i)) = 0; I2v(id(1)-1,idx(i)) = 0;
+        J21a(1,idx(i)) = J21a(id(1)-1,idx(i)); J21a(id(1)-1,idx(i)) = 0;
+        J21b(1,idx(i)) = J21b(id(1)-1,idx(i)); J21b(id(1)-1,idx(i)) = 0;
+        J21c(1,idx(i)) = J21c(id(1)-1,idx(i)); J21c(id(1)-1,idx(i)) = 0;
+        J21d(1,idx(i)) = J21d(id(1)-1,idx(i)); J21d(id(1)-1,idx(i)) = 0;
+
+        J12a(1,idx(i)) = J12a(id(1)-1,idx(i)); J12a(id(1)-1,idx(i)) = 0;
+        J12b(1,idx(i)) = J12b(id(1)-1,idx(i)); J12b(id(1)-1,idx(i)) = 0;
+        J12c(1,idx(i)) = J12c(id(1)-1,idx(i)); J12c(id(1)-1,idx(i)) = 0;
+        J12d(1,idx(i)) = J12d(id(1)-1,idx(i)); J12d(id(1)-1,idx(i)) = 0;
+
+        H21uua(1,idx(i)) = H21uua(id(1)-1,idx(i)); H21uua(id(1)-1,idx(i)) = 0;
+        H21uub(1,idx(i)) = H21uub(id(1)-1,idx(i)); H21uub(id(1)-1,idx(i)) = 0;
+        H21uva(1,idx(i)) = H21uva(id(1)-1,idx(i)); H21uva(id(1)-1,idx(i)) = 0;
+        H21uvb(1,idx(i)) = H21uvb(id(1)-1,idx(i)); H21uvb(id(1)-1,idx(i)) = 0;
+        H21vva(1,idx(i)) = H21vva(id(1)-1,idx(i)); H21vva(id(1)-1,idx(i)) = 0;
+        H21vvb(1,idx(i)) = H21vvb(id(1)-1,idx(i)); H21vvb(id(1)-1,idx(i)) = 0;
+    end
 end

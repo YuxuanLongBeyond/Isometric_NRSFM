@@ -17,18 +17,18 @@ addpath(genpath('l1magic'));
 % dataset = 'Kinect_paper.mat';
 % dataset = 'rug_trun.mat';
 % dataset = 'cat.mat';
-dataset = 'tshirt.mat';
+% dataset = 'tshirt.mat';
 
 % dataset = 'warps_plane1.mat';
 % dataset = 'warps_plane2.mat';
 
 % dataset = 'warps_plane_trial11.mat';
 
-% dataset = 'warps_cylinder1.mat';
+dataset = 'warps_cylinder1.mat';
 % dataset = 'warps_cylinder2.mat';
 % dataset = 'warps_cylinder3.mat';
 
-use_warp = 1; % if warp is already conntained in the data
+use_warp = 0; % if warp is already conntained in the data
 % schwarp = 0;
 
 pixel_noise = 0;
