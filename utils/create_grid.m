@@ -11,7 +11,15 @@ vmin = min(q1(2,:))-t; vmax = max(q1(2,:))+t;
 bbs = bbs_create(umin, umax, nC, vmin, vmax, nC, 2);
 lambdas = er*ones(nC-3, nC-3);
 
-[xv,yv]=meshgrid(linspace(bbs.umin,bbs.umax,p),linspace(bbs.vmin,bbs.vmax,p));
+% delta = -cos(pi / (p - 1) * (0:(p - 1)));
+% u_nodes = (bbs.umax + bbs.umin) / 2 + (bbs.umax - bbs.umin) / 2 * delta;
+% v_nodes = (bbs.vmax + bbs.vmin) / 2 + (bbs.vmax - bbs.vmin) / 2 * delta;
+u_nodes = linspace(bbs.umin,bbs.umax,p);
+v_nodes = linspace(bbs.vmin,bbs.vmax,p);
+
+
+[xv,yv]=meshgrid(u_nodes, v_nodes);
+
 I1u = repmat(xv(:)',n-1,1);
 I1v = repmat(yv(:)',n-1,1);
 visb2 = ones(n,length(I1u(1,:)));

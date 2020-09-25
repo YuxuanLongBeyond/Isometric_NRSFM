@@ -9,7 +9,7 @@ method.method = choice;
 
 %%% local approach
 method.measure = measure;
-method.visb = use_visb; % flag for applying visibility condition
+method.use_visb = use_visb; % flag for applying visibility condition
 method.both_view = 0; % flag for penalizing on both views
 
 %%% global approach
@@ -29,7 +29,6 @@ else
     load(dataset, 'qgth', 'Pgth', 'Ngth', 'K');
 end
 
-
 %3D Ground truth points and normalized image points
 n = length(qgth);
 pairs_num = n - 1;
@@ -38,8 +37,6 @@ for i=1:n
 end
 %visiblity matrix: remove points visible in less than 3 views
 visb = ones(n, size(q_n, 2));
-% visb(1, 2:5) = 0;
-% q_n(1:2, 2:5) = 0;
 
 %%% GROUND TRUTH NORMALS %%%%%
 if exist('Ngth','var') == 0
@@ -67,7 +64,7 @@ else
     fx = K(1, 1); fy = K(2, 2);
 end
 
-rng(2020);
+% rng(2020);
 num_p = length(I1u(1, :));
 I1u(1, :) = randn(1, num_p) * pixel_noise / fx + I1u(1, :);
 I1v(1, :) = randn(1, num_p) * pixel_noise / fy + I1v(1, :);
@@ -87,8 +84,8 @@ end
 
 toc
 
-view_id_list = 2:(1 + pairs_num);
-% view_id_list = [2];
+% view_id_list = 2:(1 + pairs_num);
+view_id_list = [40];
 
 
 err = 1e-20; % tolerance for imaginary part 
@@ -142,7 +139,7 @@ method.f2_coef = f2_coef;
 method.first_cubic_coef = first_cubic_coef;
 method.t_all = t_all;
 method.J21_all = J21_all;
-
+method.visb = visb;
     
 T_poly = zeros(1, length(view_id_list));
 T_sel = zeros(1, length(view_id_list));
@@ -207,17 +204,17 @@ for view_id = view_id_list
 
     else
         % solve x1 and x2
-        eq = eq_coef{view_id - 1};
-        f1 = f1_coef{view_id - 1};
-        f2 = f2_coef{view_id - 1};
+        eq = eq_coef{view_id - 1}(:, idx);
+        f1 = f1_coef{view_id - 1}(:, idx);
+        f2 = f2_coef{view_id - 1}(:, idx);
 
         [x1, x2] = solve_cubic(eq, f1, f2, err);
 
         %%% Note that we replace all complex numbers with NaN
         %%% there are 6 roots, so x1 and x2 have 6 rows of solution
 
-        J12a_all = repmat(J12a(view_id - 1, :), 6, 1); J12b_all = repmat(J12b(view_id - 1, :), 6, 1);
-        J12c_all = repmat(J12c(view_id - 1, :), 6, 1); J12d_all = repmat(J12d(view_id - 1, :), 6, 1);
+        J12a_all = repmat(J12a(view_id - 1, idx), 6, 1); J12b_all = repmat(J12b(view_id - 1, idx), 6, 1);
+        J12c_all = repmat(J12c(view_id - 1, idx), 6, 1); J12d_all = repmat(J12d(view_id - 1, idx), 6, 1);
 
         % on the first view
         k1 = J12a_all .* x1 + J12b_all .* x2;
@@ -227,8 +224,6 @@ for view_id = view_id_list
         k1_ = x1 + repmat(t1, 6, 1);
         k2_ = x2 + repmat(t2, 6, 1);
         
-        k1 = k1(:, idx); k2 = k2(:, idx);
-        k1_ = k1_(:, idx); k2_ = k2_(:, idx);
     end
     T_poly(count) = toc;
 
@@ -250,11 +245,81 @@ for view_id = view_id_list
 
     N = [N1(:),N2(:),N3(:)]';
     N_res = reshape(N(:),3*num, size(u_all, 2));
-    
+
     N_tem = zeros(3 * num, length(idx));
     N_tem(:, idx) = N_res;
     N_res = N_tem;
+    
+    tem_mask = ~isnan(k1);
+    k1_all_another = [k1((~mask) & tem_mask)'; k1_((~mask) & tem_mask)'];
+    k2_all_another = [k2((~mask) & tem_mask)'; k2_((~mask) & tem_mask)'];
+    N1_ = k1_all_another; N2_ = k2_all_another; N3_ = 1-u_all.*k1_all_another-v_all.*k2_all_another;
+    n = sqrt(N1_.^2+N2_.^2+N3_.^2);
+    N1_ = N1_./n ; N2_ = N2_./n; N3_ = N3_./n;
+    N_ = [N1_(:),N2_(:),N3_(:)]';
+    N_res_another = reshape(N_(:),3*num, size(u_all, 2));
+%     N_res = N_res_another;
 
+    % compare GT normals
+    er = 1e-5;
+    t= 1e-3;
+    nC = 40;
+    
+    umin = min(q_n(1,:))-t; umax = max(q_n(1,:))+t;
+    vmin = min(q_n(2,:))-t; vmax = max(q_n(2,:))+t;
+    
+    bbs = bbs_create(umin, umax, nC, vmin, vmax, nC, 3);
+    coloc = bbs_coloc(bbs, q_n(1,:), q_n(2,:));
+    lambdas = er*ones(nC-3, nC-3);
+    bending = bbs_bending(bbs, lambdas);
+    cpts = (coloc'*coloc + bending) \ (coloc'*Pgth(1:3, :)');
+    ctrlpts = cpts';
+    
+    dqu = bbs_eval(bbs, ctrlpts, I1u_tem',I1v_tem',1,0);
+    dqv = bbs_eval(bbs, ctrlpts, I1u_tem',I1v_tem',0,1);
+    
+    nu = [dqu(1,:)./sqrt(sum(dqu.^2));dqu(2,:)./sqrt(sum(dqu.^2));dqu(3,:)./sqrt(sum(dqu.^2))];
+    nv = [dqv(1,:)./sqrt(sum(dqv.^2));dqv(2,:)./sqrt(sum(dqv.^2));dqv(3,:)./sqrt(sum(dqv.^2))];
+    nn = -cross(nu,nv);
+    Ng1 = [nn(1,:)./sqrt(sum(nn.^2));nn(2,:)./sqrt(sum(nn.^2));nn(3,:)./sqrt(sum(nn.^2))];
+      
+    map1 = reshape(sqrt(sum(cross(Ng1(1:3, :), N_res(1:3, :)) .^ 2)), 20, 20);
+    
+    map1_another = reshape(sqrt(sum(cross(Ng1(1:3, :), N_res_another(1:3, :)) .^ 2)), 20, 20);
+    figure
+    histogram(map1(:))
+    figure
+    max(max(map1))
+    map1 = map1 / max(max(map1));
+    imshow(map1)
+    
+    
+    umin = min(q_n(3,:))-t; umax = max(q_n(3,:))+t;
+    vmin = min(q_n(4,:))-t; vmax = max(q_n(4,:))+t;
+    
+    bbs = bbs_create(umin, umax, nC, vmin, vmax, nC, 3);
+    coloc = bbs_coloc(bbs, q_n(3,:), q_n(4,:));
+    lambdas = er*ones(nC-3, nC-3);
+    bending = bbs_bending(bbs, lambdas);
+    cpts = (coloc'*coloc + bending) \ (coloc'*Pgth_tem(4:6, :)');
+    ctrlpts = cpts';
+    
+    dqu = bbs_eval(bbs, ctrlpts, I2u_tem',I2v_tem',1,0);
+    dqv = bbs_eval(bbs, ctrlpts, I2u_tem',I2v_tem',0,1);
+    
+    nu = [dqu(1,:)./sqrt(sum(dqu.^2));dqu(2,:)./sqrt(sum(dqu.^2));dqu(3,:)./sqrt(sum(dqu.^2))];
+    nv = [dqv(1,:)./sqrt(sum(dqv.^2));dqv(2,:)./sqrt(sum(dqv.^2));dqv(3,:)./sqrt(sum(dqv.^2))];
+    nn = -cross(nu,nv);
+    Ng2 = [nn(1,:)./sqrt(sum(nn.^2));nn(2,:)./sqrt(sum(nn.^2));nn(3,:)./sqrt(sum(nn.^2))];
+    map2 = reshape(sqrt(sum(cross(Ng2, N_res(4:6, :)) .^ 2)), 20, 20);
+    map2_another = reshape(sqrt(sum(cross(Ng2, N_res_another(4:6, :)) .^ 2)), 20, 20);
+    figure
+    histogram(map2(:))    
+    max(max(map2))
+    map2 = map2 / max(max(map2));
+    figure
+    imshow(map2)
+    
     tic
     % Integrate normals to find depth
     P_grid = calculate_depth(N_res,u_all,v_all,1e0);

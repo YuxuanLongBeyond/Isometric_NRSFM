@@ -47,7 +47,7 @@ if method.method == 0
             error('issue here')
         end
         
-        if method.visb && any(k3(:, i) > 0)
+        if method.use_visb && any(k3(:, i) > 0)
             tem = tem(k3(:, i) > 0);
         end
 %         tem(~isnan(tem)) = rand(sum(~isnan(tem)), 1);
@@ -313,9 +313,10 @@ if method.method == 2
         tem2 = tem2(~isnan(tem2));
        
         % ready to collect the sum of squared errors
-        err_list = zeros(length(tem1), pairs_num);
+%         err_list = zeros(length(tem1), pairs_num);
+        err_list = [];
         for j = 1:pairs_num
-            if j ~= (method.view_id - 1)
+            if (j ~= (method.view_id - 1)) && (method.visb(j + 1, n) == 1)
                 f1 = method.f1_coef{j};
                 f2 = method.f2_coef{j};
                 r = method.first_cubic_coef{j};
@@ -333,13 +334,11 @@ if method.method == 2
                 
                 % second cubic
                 c2 = polyval(flipud(f2(:, i))', x2) + x1 .* polyval(flipud(f1(:, i))', x2);
-                err_list(:, j) = c1 .^ 2 + c2 .^ 2; % sum of squared errors
+                err_list = [err_list, c1 .^ 2 + c2 .^ 2]; % sum of squared errors
             end
         end
-        err_list(:, method.view_id - 1) = [];
+%         err_list(:, method.view_id - 1) = [];
         
-
-
         [~, index] = min(median(err_list, 2)); % choose least median
         
         all_index = find(mask(:, i) == 1);

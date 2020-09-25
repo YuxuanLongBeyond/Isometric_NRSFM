@@ -14,7 +14,7 @@ addpath(genpath('sparseinv'));
 addpath(genpath('utils'));
 addpath(genpath('l1magic'));
 
-% dataset = 'Kinect_paper.mat';
+dataset = 'Kinect_paper.mat';
 % dataset = 'rug_trun.mat';
 % dataset = 'cat.mat';
 % dataset = 'tshirt.mat';
@@ -24,17 +24,17 @@ addpath(genpath('l1magic'));
 
 % dataset = 'warps_plane_trial11.mat';
 
-dataset = 'warps_cylinder1.mat';
+% dataset = 'warps_cylinder1.mat';
 % dataset = 'warps_cylinder2.mat';
 % dataset = 'warps_cylinder3.mat';
 
-use_warp = 0; % if warp is already conntained in the data
+use_warp = 1; % if warp is already conntained in the data
 % schwarp = 0;
 
 pixel_noise = 0;
 f = 500;  % default focal length
 
-show_plot = 0; % flag for showing the recovered shapes
+show_plot = 1; % flag for showing the recovered shapes
 
 grid = 1;
 if strcmp(dataset(1:5), 'warps')
@@ -43,7 +43,7 @@ end
 
 
 %% test two view methods
-decomp = 1;
+decomp = 0;
 method = struct;
 
 choice = 0; 

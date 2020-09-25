@@ -5,7 +5,7 @@ N = zeros(size(P));
 for i = 1: size(P,1)/3
     
     q1 = q(2*(i-1)+1:2*(i-1)+2,:);
-    idx = q1(1,:)~=0;
+    idx = (q1(1,:)~=0) & (q1(2,:)~=0);
     umin=min(q1(1,idx))-0.1;umax=max(q1(1,idx))+0.1;
     vmin=min(q1(2,idx))-0.1;vmax=max(q1(2,idx))+0.1;
     bbs = bbs_create(umin, umax, nC, vmin, vmax, nC, 3);

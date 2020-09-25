@@ -51,7 +51,7 @@ else
     fx = K(1, 1); fy = K(2, 2);
 end
 
-rng(2020);
+% rng(2020);
 num_p = length(I1u(1, :));
 I1u(1, :) = randn(1, num_p) * pixel_noise / fx + I1u(1, :);
 I1v(1, :) = randn(1, num_p) * pixel_noise / fy + I1v(1, :);
@@ -114,26 +114,25 @@ if strcmp(solver, 'infP') || strcmp(solver, 'iso')
     % minimise it to obtain depth derivatives
     res = solve_polynomial(eq);
     
-    % remove points with no solution
-    res_inf = res;
-    idx = find(res(:,1)==0); res(idx,:)=[];
-    u(:,idx) = []; v(:,idx) = []; u1(:,idx) = []; v1(:,idx) = []; e(:,idx)=[];e1(:,idx)=[];
-    a(:,idx) = []; b(:,idx) = []; c(:,idx) = []; d(:,idx) = []; t1(:,idx) = []; t2(:,idx) = [];
-    J12a(:,idx) = []; J12b(:,idx) = []; J12c(:,idx) = []; J12d(:,idx) = [];
-    H21uua(:,idx) = []; H21uub(:,idx) = []; 
-    H21uva(:,idx) = []; H21uvb(:,idx) = []; 
-    H21vva(:,idx) = []; H21vvb(:,idx) = [];
 
-    % recover first order derivatives on rest of the surfaces
-    k1_inf = [res(:,1)';a.*repmat(res(:,1)',num-1,1) + b.*repmat(res(:,2)',num-1,1) + t1];
-    k2_inf = [res(:,2)';c.*repmat(res(:,1)',num-1,1) + d.*repmat(res(:,2)',num-1,1) + t2];
-    k1_inf(:,idx)=[]; k2_inf(:,idx)=[];
-    k1_old = k1_inf; k2_old = k2_inf;
-    % NEW Christoffel symbols
-    % T1 = -2*k1 + k3*A;  T2 = k3*B;
-    % T3 = -k2 + k4*A;    T4 = -k1 + k4*B;
-    % T5 =  k5*A;         T6 = -2*k2 + k5*B;
-    res_old = res;
+%     % remove points with no solution
+%     res_inf = res;
+%     idx = find(res(:,1)==0); res(idx,:)=[];
+%     u(:,idx) = []; v(:,idx) = []; u1(:,idx) = []; v1(:,idx) = []; e(:,idx)=[];e1(:,idx)=[];
+%     a(:,idx) = []; b(:,idx) = []; c(:,idx) = []; d(:,idx) = []; t1(:,idx) = []; t2(:,idx) = [];
+%     J12a(:,idx) = []; J12b(:,idx) = []; J12c(:,idx) = []; J12d(:,idx) = [];
+%     H21uua(:,idx) = []; H21uub(:,idx) = []; H21uva(:,idx) = []; H21uvb(:,idx) = []; H21vva(:,idx) = []; H21vvb(:,idx) = [];
+
+%     % recover first order derivatives on rest of the surfaces
+%     k1_inf = [res(:,1)';a.*repmat(res(:,1)',num-1,1) + b.*repmat(res(:,2)',num-1,1) + t1];
+%     k2_inf = [res(:,2)';c.*repmat(res(:,1)',num-1,1) + d.*repmat(res(:,2)',num-1,1) + t2];
+%     k1_inf(:,idx)=[]; k2_inf(:,idx)=[];
+%     k1_old = k1_inf; k2_old = k2_inf;
+%     % NEW Christoffel symbols
+%     % T1 = -2*k1 + k3*A;  T2 = k3*B;
+%     % T3 = -k2 + k4*A;    T4 = -k1 + k4*B;
+%     % T5 =  k5*A;         T6 = -2*k2 + k5*B;
+%     res_old = res;
 
     if strcmp(solver, 'iso')
         disp('Solving general case: Alternate Approach.....')
@@ -194,10 +193,10 @@ if strcmp(solver, 'infP') || strcmp(solver, 'iso')
 
     N = [N1(:),N2(:),N3(:)]';
     N_res = reshape(N(:),3*num,length(u_all));
-
-    % find indices with no solution
-    idx = find(res(:,1)==0);
-    N_res(:,idx) = []; u_all(:,idx) = []; v_all(:,idx) = [];
+% 
+%     % find indices with no solution
+%     idx = find(res(:,1)==0);
+%     N_res(:,idx) = []; u_all(:,idx) = []; v_all(:,idx) = [];
 
 end
 
@@ -257,9 +256,9 @@ if strcmp(solver, 'fastDiffH')
                 w = 1 ./ sqrt(tem(1:3:end) .^ 2 + tem(2:3:end) .^ 2 + tem(3:3:end) .^ 2);
                 w = [w, w, w]';
                 w = w(:);
-%                 if any(isinf(w))
-%                     break
-%                 end
+                if any(isinf(w))
+                    break
+                end
             end
         end
 %         n = mean(col_n)'; n = n / norm(n);
@@ -273,6 +272,7 @@ if strcmp(solver, 'fastDiffH')
         N_res(4:end, i) = n_(:);
         
     end
+    u_all = [I1u(1,:);I2u]; v_all = [I1v(1,:);I2v];
 end
 
 
@@ -329,9 +329,10 @@ if strcmp(solver, 'polyH')
             N_res((3 * (j - 1) + 1):(3 * j), i) = n_ / norm(n_);
         end
     end
+    u_all = [I1u(1,:);I2u]; v_all = [I1v(1,:);I2v];
 end
 toc
-u_all = [I1u(1,:);I2u]; v_all = [I1v(1,:);I2v];
+
 
 % Integrate normals to find depth
 P_grid=calculate_depth(N_res,u_all,v_all,1e0);
