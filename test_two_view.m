@@ -289,7 +289,7 @@ for view_id = view_id_list
     histogram(map1(:))
     figure
     max(max(map1))
-    map1 = map1 / max(max(map1));
+%     map1 = map1 / max(max(map1));
     imshow(map1)
     
     
@@ -315,7 +315,7 @@ for view_id = view_id_list
     figure
     histogram(map2(:))    
     max(max(map2))
-    map2 = map2 / max(max(map2));
+%     map2 = map2 / max(max(map2));
     figure
     imshow(map2)
     
