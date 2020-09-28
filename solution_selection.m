@@ -42,10 +42,10 @@ if method.method == 0
         % we choose the one with least value
         tem = measure(:, i);
         
-        if sum(isnan(tem)) ~= 4
-            disp(i)
-            error('issue here')
-        end
+%         if sum(isnan(tem)) ~= 4
+%             disp(i)
+%             error('issue here')
+%         end
         
         if method.use_visb && any(k3(:, i) > 0)
             tem = tem(k3(:, i) > 0);

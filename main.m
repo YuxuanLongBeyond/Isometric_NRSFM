@@ -14,10 +14,10 @@ addpath(genpath('sparseinv'));
 addpath(genpath('utils'));
 addpath(genpath('l1magic'));
 
-dataset = 'Kinect_paper.mat';
+% dataset = 'Kinect_paper.mat';
 % dataset = 'rug_trun.mat';
 % dataset = 'cat.mat';
-% dataset = 'tshirt.mat';
+dataset = 'tshirt.mat';
 
 % dataset = 'warps_plane1.mat';
 % dataset = 'warps_plane2.mat';
@@ -60,28 +60,36 @@ measure = 'ln'; % least norm or least change of depth
 use_visb = 1; % flag for applying visibility condition
 
 %%% global approach
-solver = 'admm';
-% solver = 'qp';
+% solver = 'admm';
+solver = 'qp';
 
 [error_metric, T_poly, T_sel, T_norm] = test_two_view(dataset, pixel_noise, f, show_plot, decomp, choice, measure, use_visb, solver, grid, use_warp);
 disp('Average time taken to reconstruct one pair of views:')
 mean(T_poly) + mean(T_sel) + mean(T_norm)
 err_n_ln = error_metric(3, :);
 err_d_ln = error_metric(1, :);
-save([dataset(1:end-4), '_two_view_ln_schwarp.mat' ], 'err_n_ln', 'err_d_ln')
+err_n_collect_first = mean(error_metric(3, :));
+err_n_collect_second = mean(error_metric(4, :));
+err_n_collect_all = mean([mean(error_metric(3, :)), error_metric(4, :)]);
+
+err_d_collect_first = mean(error_metric(1, :));
+err_d_collect_second = mean(error_metric(2, :));
+err_d_collect_all = mean([mean(error_metric(1, :)), error_metric(2, :)]);
+% save([dataset(1:end-4), '_two_view_', 'ln', '_bbs.mat' ], 'err_n_ln', 'err_d_ln')
 
 %% test multiple view methods
-% solver = 'infP';
+solver = 'infP';
 % solver = 'iso';
 % solver = 'polyH';
-solver = 'fastDiffH';
+% solver = 'fastDiffH';
 
-views_num = 10; % should be greater than 2
-% views_num = 'all';
+% views_num = 10; % should be greater than 2
+views_num = 'all';
 
 tic
-[err_n, err_p] = test_multiple_view(dataset, pixel_noise, f, solver, grid, show_plot, use_warp, views_num);
+[err_n, err_d] = test_multiple_view(dataset, pixel_noise, f, solver, grid, show_plot, use_warp, views_num);
 toc
+save([dataset(1:end-4), '_multiple_view_', solver, '_schwarp.mat'], 'err_n', 'err_d')
 
 %% test mode for multiple views
 
