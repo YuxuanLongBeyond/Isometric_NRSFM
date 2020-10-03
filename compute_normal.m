@@ -1,5 +1,6 @@
-function [na, nb, na_, nb_] = compute_normal(vec_W, vec_W_invt)
-%%% n3 should be nonzero
+function [na, nb, na_, nb_, sigma] = compute_normal(vec_W, vec_W_invt)
+%%% formula from Ezio Malis, Manuel Vargas:
+%%% Deeper understanding of the homography decomposition for vision-based control
 
 M = cell(3);
 for i = 1:3
@@ -16,7 +17,13 @@ Q = (3 * a1 - a2 .^ 2) / 9;
 R = (9 * a2 .* a1 - 27 * a0 - 2 * a2 .^ 3) / 54;
 S = (R + sqrt(Q .^ 3 + R .^ 2)) .^ (1 / 3);
 T = (R - sqrt(Q .^ 3 + R .^ 2)) .^ (1 / 3);
+lam1 = -a2 / 3 + (S + T);
 lam2 = -a2 / 3 - (S + T) / 2 - sqrt(3) / 2 * (S - T) * (1i);
+lam3 = -a2 / 3 - (S + T) / 2 + sqrt(3) / 2 * (S - T) * (1i);
+sigma(:, :, 1) = lam1;
+sigma(:, :, 2) = lam2;
+sigma(:, :, 3) = lam3;
+sigma = sqrt(sigma ./ lam2);
 
 S = cell(3);
 S{1, 1} = M{1, 1} ./ lam2 - 1; S{1, 2} = M{1, 2} ./ lam2; S{1, 3} = M{1, 3} ./ lam2;
@@ -57,5 +64,6 @@ na = real(na);
 nb = real(nb);
 na_ = real(na_);
 nb_ = real(nb_);
+
 
 end

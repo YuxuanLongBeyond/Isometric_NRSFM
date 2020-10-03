@@ -42,9 +42,9 @@ for j = 1:length(id)
         cpts = (coloc'*coloc + bending) \ (coloc'*q1');
         ctrlpts = cpts';
         
-%         [xv,yv]=meshgrid(linspace(umin,umax,100),linspace(vmin,vmax,100));
-%         ctrlpts = optimPanalSchwarz(bbs,ctrlpts,q2',q1',[xv(:),yv(:)],par);
-%         ctrlpts=ctrlpts';
+        [xv,yv]=meshgrid(linspace(umin,umax,100),linspace(vmin,vmax,100));
+        ctrlpts = optimPanalSchwarz(bbs,ctrlpts,q2',q1',[xv(:),yv(:)],par);
+        ctrlpts=ctrlpts';
         
         qw2 = bbs_eval(bbs,ctrlpts,q2(1,:)',q2(2,:)',0,0);
         error=sqrt(mean((qw2(1,:)-q1(1,:)).^2+(qw2(2,:)-q1(2,:)).^2));

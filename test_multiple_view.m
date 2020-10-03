@@ -343,7 +343,7 @@ P_grid=calculate_depth(N_res,u_all,v_all,1e0);
 
 % plot results
 if show_plot
-    for i=1:size(u_all,1)
+    for i= 40 % 1:size(u_all,1)
          figure(i)
         plot3(Pgth(3*(i-1)+1,:),Pgth(3*(i-1)+2,:),Pgth(3*(i-1)+3,:),'go');
         hold on;

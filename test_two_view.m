@@ -35,7 +35,7 @@ pairs_num = n - 1;
 for i=1:n
     q_n(2*(i-1)+1:2*(i-1)+2,:) = qgth{i}(1:2, :);
 end
-%visiblity matrix: remove points visible in less than 3 views
+% visiblity matrix: remove points visible in less than 3 views
 visb = ones(n, size(q_n, 2));
 
 %%% GROUND TRUTH NORMALS %%%%%
@@ -84,8 +84,8 @@ end
 
 toc
 
-view_id_list = 2:(1 + pairs_num);
-% view_id_list = [40];
+% view_id_list = 2:(1 + pairs_num);
+view_id_list = [40];
 
 
 err = 1e-20; % tolerance for imaginary part 
@@ -201,7 +201,6 @@ for view_id = view_id_list
         k1_ = [tem; k1_];
         k2_ = [tem; k2_];
 
-
     else
         % solve x1 and x2
         eq = eq_coef{view_id - 1}(:, idx);
@@ -227,11 +226,11 @@ for view_id = view_id_list
     end
     T_poly(count) = toc;
     
-    mask1 = abs(k1) > 1; mask2 = abs(k2) > 1;
-    mask3 = (mask1 | mask2);
-    mask3(:, sum(mask3) >= 2) = 0; mask3 = mask3 == 1;
-    k1(mask3) = nan; k2(mask3) = nan;
-    k1_(mask3) = nan; k2_(mask3) = nan;
+%     mask1 = abs(k1) > 1; mask2 = abs(k2) > 1;
+%     mask3 = (mask1 | mask2);
+%     mask3(:, sum(mask3) >= 2) = 0; mask3 = mask3 == 1;
+%     k1(mask3) = nan; k2(mask3) = nan;
+%     k1_(mask3) = nan; k2_(mask3) = nan;
 
     % compute the mask for selecting the desirable solutions
     tic
@@ -263,72 +262,72 @@ for view_id = view_id_list
     N_tem(:, idx) = N_res;
     N_res = N_tem;
     
-%     tem_mask = ~isnan(k1);
-%     k1_all_another = [k1((~mask) & tem_mask)'; k1_((~mask) & tem_mask)'];
-%     k2_all_another = [k2((~mask) & tem_mask)'; k2_((~mask) & tem_mask)'];
-%     N1_ = k1_all_another; N2_ = k2_all_another; N3_ = 1-u_all.*k1_all_another-v_all.*k2_all_another;
-%     n = sqrt(N1_.^2+N2_.^2+N3_.^2);
-%     N1_ = N1_./n ; N2_ = N2_./n; N3_ = N3_./n;
-%     N_ = [N1_(:),N2_(:),N3_(:)]';
-%     N_res_another = reshape(N_(:),3*num, size(u_all, 2));
-% 
-%     % compare GT normals
-%     er = 1e-5;
-%     t= 1e-3;
-%     nC = 40;
-%     
-%     umin = min(q_n(1,:))-t; umax = max(q_n(1,:))+t;
-%     vmin = min(q_n(2,:))-t; vmax = max(q_n(2,:))+t;
-%     
-%     bbs = bbs_create(umin, umax, nC, vmin, vmax, nC, 3);
-%     coloc = bbs_coloc(bbs, q_n(1,:), q_n(2,:));
-%     lambdas = er*ones(nC-3, nC-3);
-%     bending = bbs_bending(bbs, lambdas);
-%     cpts = (coloc'*coloc + bending) \ (coloc'*Pgth(1:3, :)');
-%     ctrlpts = cpts';
-%     
-%     dqu = bbs_eval(bbs, ctrlpts, I1u_tem',I1v_tem',1,0);
-%     dqv = bbs_eval(bbs, ctrlpts, I1u_tem',I1v_tem',0,1);
-%     
-%     nu = [dqu(1,:)./sqrt(sum(dqu.^2));dqu(2,:)./sqrt(sum(dqu.^2));dqu(3,:)./sqrt(sum(dqu.^2))];
-%     nv = [dqv(1,:)./sqrt(sum(dqv.^2));dqv(2,:)./sqrt(sum(dqv.^2));dqv(3,:)./sqrt(sum(dqv.^2))];
-%     nn = -cross(nu,nv);
-%     Ng1 = [nn(1,:)./sqrt(sum(nn.^2));nn(2,:)./sqrt(sum(nn.^2));nn(3,:)./sqrt(sum(nn.^2))];
-%       
-%     map1 = reshape(sqrt(sum(cross(Ng1(1:3, :), N_res(1:3, :)) .^ 2)), 20, 20);
-%     
-%     map1_another = reshape(sqrt(sum(cross(Ng1(1:3, :), N_res_another(1:3, :)) .^ 2)), 20, 20);
+    tem_mask = ~isnan(k1);
+    k1_all_another = [k1((~mask) & tem_mask)'; k1_((~mask) & tem_mask)'];
+    k2_all_another = [k2((~mask) & tem_mask)'; k2_((~mask) & tem_mask)'];
+    N1_ = k1_all_another; N2_ = k2_all_another; N3_ = 1-u_all.*k1_all_another-v_all.*k2_all_another;
+    n = sqrt(N1_.^2+N2_.^2+N3_.^2);
+    N1_ = N1_./n ; N2_ = N2_./n; N3_ = N3_./n;
+    N_ = [N1_(:),N2_(:),N3_(:)]';
+    N_res_another = reshape(N_(:),3*num, size(u_all, 2));
+
+    % compare GT normals
+    er = 1e-5;
+    t= 1e-3;
+    nC = 40;
+    
+    umin = min(q_n(1,:))-t; umax = max(q_n(1,:))+t;
+    vmin = min(q_n(2,:))-t; vmax = max(q_n(2,:))+t;
+    
+    bbs = bbs_create(umin, umax, nC, vmin, vmax, nC, 3);
+    coloc = bbs_coloc(bbs, q_n(1,:), q_n(2,:));
+    lambdas = er*ones(nC-3, nC-3);
+    bending = bbs_bending(bbs, lambdas);
+    cpts = (coloc'*coloc + bending) \ (coloc'*Pgth(1:3, :)');
+    ctrlpts = cpts';
+    
+    dqu = bbs_eval(bbs, ctrlpts, I1u_tem',I1v_tem',1,0);
+    dqv = bbs_eval(bbs, ctrlpts, I1u_tem',I1v_tem',0,1);
+    
+    nu = [dqu(1,:)./sqrt(sum(dqu.^2));dqu(2,:)./sqrt(sum(dqu.^2));dqu(3,:)./sqrt(sum(dqu.^2))];
+    nv = [dqv(1,:)./sqrt(sum(dqv.^2));dqv(2,:)./sqrt(sum(dqv.^2));dqv(3,:)./sqrt(sum(dqv.^2))];
+    nn = -cross(nu,nv);
+    Ng1 = [nn(1,:)./sqrt(sum(nn.^2));nn(2,:)./sqrt(sum(nn.^2));nn(3,:)./sqrt(sum(nn.^2))];
+      
+    map1 = reshape(sqrt(sum(cross(Ng1(1:3, :), N_res(1:3, :)) .^ 2)), 20, 20);
+    
+    map1_another = reshape(sqrt(sum(cross(Ng1(1:3, :), N_res_another(1:3, :)) .^ 2)), 20, 20);
 %     figure
 %     histogram(map1(:))
 %     figure
-%     max(max(map1))
-% %     map1 = map1 / max(max(map1));
+    max(max(map1))
+%     map1 = map1 / max(max(map1));
 %     imshow(map1)
-%     
-%     
-%     umin = min(q_n(3,:))-t; umax = max(q_n(3,:))+t;
-%     vmin = min(q_n(4,:))-t; vmax = max(q_n(4,:))+t;
-%     
-%     bbs = bbs_create(umin, umax, nC, vmin, vmax, nC, 3);
-%     coloc = bbs_coloc(bbs, q_n(3,:), q_n(4,:));
-%     lambdas = er*ones(nC-3, nC-3);
-%     bending = bbs_bending(bbs, lambdas);
-%     cpts = (coloc'*coloc + bending) \ (coloc'*Pgth_tem(4:6, :)');
-%     ctrlpts = cpts';
-%     
-%     dqu = bbs_eval(bbs, ctrlpts, I2u_tem',I2v_tem',1,0);
-%     dqv = bbs_eval(bbs, ctrlpts, I2u_tem',I2v_tem',0,1);
-%     
-%     nu = [dqu(1,:)./sqrt(sum(dqu.^2));dqu(2,:)./sqrt(sum(dqu.^2));dqu(3,:)./sqrt(sum(dqu.^2))];
-%     nv = [dqv(1,:)./sqrt(sum(dqv.^2));dqv(2,:)./sqrt(sum(dqv.^2));dqv(3,:)./sqrt(sum(dqv.^2))];
-%     nn = -cross(nu,nv);
-%     Ng2 = [nn(1,:)./sqrt(sum(nn.^2));nn(2,:)./sqrt(sum(nn.^2));nn(3,:)./sqrt(sum(nn.^2))];
-%     map2 = reshape(sqrt(sum(cross(Ng2, N_res(4:6, :)) .^ 2)), 20, 20);
-%     map2_another = reshape(sqrt(sum(cross(Ng2, N_res_another(4:6, :)) .^ 2)), 20, 20);
+    
+    
+    umin = min(q_n(3,:))-t; umax = max(q_n(3,:))+t;
+    vmin = min(q_n(4,:))-t; vmax = max(q_n(4,:))+t;
+    
+    bbs = bbs_create(umin, umax, nC, vmin, vmax, nC, 3);
+    coloc = bbs_coloc(bbs, q_n(3,:), q_n(4,:));
+    lambdas = er*ones(nC-3, nC-3);
+    bending = bbs_bending(bbs, lambdas);
+    cpts = (coloc'*coloc + bending) \ (coloc'*Pgth_tem(4:6, :)');
+    ctrlpts = cpts';
+    
+    dqu = bbs_eval(bbs, ctrlpts, I2u_tem',I2v_tem',1,0);
+    dqv = bbs_eval(bbs, ctrlpts, I2u_tem',I2v_tem',0,1);
+    
+    nu = [dqu(1,:)./sqrt(sum(dqu.^2));dqu(2,:)./sqrt(sum(dqu.^2));dqu(3,:)./sqrt(sum(dqu.^2))];
+    nv = [dqv(1,:)./sqrt(sum(dqv.^2));dqv(2,:)./sqrt(sum(dqv.^2));dqv(3,:)./sqrt(sum(dqv.^2))];
+    nn = -cross(nu,nv);
+    Ng2 = [nn(1,:)./sqrt(sum(nn.^2));nn(2,:)./sqrt(sum(nn.^2));nn(3,:)./sqrt(sum(nn.^2))];
+    map2 = reshape(sqrt(sum(cross(Ng2, N_res(4:6, :)) .^ 2)), 20, 20);
+    map2_another = reshape(sqrt(sum(cross(Ng2, N_res_another(4:6, :)) .^ 2)), 20, 20);
 %     figure
 %     histogram(map2(:))    
-%     max(max(map2))
-% %     map2 = map2 / max(max(map2));
+    max(max(map2))
+%     map2 = map2 / max(max(map2));
 %     figure
 %     imshow(map2)
     
