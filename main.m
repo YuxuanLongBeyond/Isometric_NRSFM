@@ -2,7 +2,7 @@
 clear all;close all;
 
 % add libraries
-addpath(genpath('BBS_NOOMP'));
+addpath(genpath('BBS'));
 addpath(genpath('tbxmanager'));
 tbxmanager restorepath
 
@@ -14,7 +14,7 @@ addpath(genpath('sparseinv'));
 addpath(genpath('utils'));
 addpath(genpath('l1magic'));
 
-dataset = 'Kinect_paper.mat';
+dataset = 'Kinect_paper_nongrid.mat';
 % dataset = 'rug_trun.mat';
 % dataset = 'cat.mat';
 % dataset = 'tshirt.mat';
@@ -36,7 +36,7 @@ f = 500;  % default focal length
 
 show_plot = 1; % flag for showing the recovered shapes
 
-grid = 1;
+grid = 0;
 if strcmp(dataset(1:5), 'warps')
     grid = 0;
 end
@@ -76,6 +76,7 @@ err_d_collect_first = mean(error_metric(1, :));
 err_d_collect_second = mean(error_metric(2, :));
 err_d_collect_all = mean([mean(error_metric(1, :)), error_metric(2, :)]);
 % save([dataset(1:end-4), '_two_view_', 'ln', '_bbs.mat' ], 'err_n_ln', 'err_d_ln')
+
 
 %% test multiple view methods
 solver = 'infP';

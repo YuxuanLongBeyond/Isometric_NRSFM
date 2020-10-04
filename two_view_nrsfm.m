@@ -1,37 +1,40 @@
-clear all;close all;
-% add libraries
-addpath(genpath('BBS_NOOMP'));
-addpath(genpath('tbxmanager'));
-tbxmanager restorepath
+function [error_map1, error_map2, err_n, err_p] = two_view_nrsfm(dataset, frame1, frame2, pixel_noise, choice, measure, solver, grid, grid_size, use_warp, degen_filter, use_gth, show_plot, show_im)
+f = 500; % assumed focal length
+if ~use_gth
+    method = struct;
+    method.method = choice; 
+    % 0 for local approach: locally select the shape parameters
+    % 1 for global approach: select the solution by maximizing the consistency
+    % 2 for least median: select the least median (not a two-view method)
+    % 3 for common approach: least sum of dot products
 
-addpath('SfTv0_3');
-% addpath(genpath('gloptipoly3'));
-% addpath(genpath('SeDuMi_1_3'));
-addpath(genpath('schwarps'));
-% addpath(genpath('sparseinv'));
-addpath(genpath('utils'));
-% addpath(genpath('l1magic'));
+    %%% local approach
+    % measure = 'msa'; % minimum surface area
+    % measure = 'apap'; % as parallel as possible
+%     measure = 'ln'; % least norm or least change of depth
+    
+    method.use_visb = 1;
+    method.measure = measure;
+    method.both_view = 0; % flag for penalizing on both views
 
+    %%% global approach
+    method.solver = solver;
+    method.c1 = 1.0; % parallelism for both views
+    method.c2 = 0.1; % least depth change in both views
+    method.c3 = 1.0; % visibility for both views
+
+    % parameters for constructing the Laplacian
+    method.sigma = 0.2;
+    method.ratio = 1.0; % threshold = ratio * average squared distance
+end
 
 degen_thre = 0.15;
-% degen_std = 1.5;
-degen_std = 3;
+degen_std = 1;
 
-error_thre = 0.15;
-error_thre_after = 0.15;
+error_thre = 10;
+error_thre_after = 10;
 frontal_thre = 0.02;
 
-grid = 0;
-grid_size = 20;
-use_warp = 1;
-
-frame1 = 1;
-frame2 = 100;
-
-im1 = imread(['kinect paper/', num2str(frame1,'%03.f'), '.bmp']);
-im2 = imread(['kinect paper/', num2str(frame2,'%03.f'), '.bmp']);
-
-dataset = 'Kinect_paper.mat';
 dataset = ['./warps_data/', dataset];
 
 load(dataset, 'qgth', 'Pgth', 'Ngth', 'K');
@@ -53,7 +56,7 @@ visb = ones(2, size(q_n, 2));
 
 if grid %max(sum(visb)) == num
     % make a grid
-    [I1u,I1v,I2u,I2v,visb] = create_grid(q_n,visb,grid_size);
+    [I1u,I1v,I2u,I2v, visb] = create_grid(q_n,visb,grid_size);
 else
     % point-wise
     I1u = repmat(q_n(1,:),n-1,1);
@@ -61,7 +64,6 @@ else
     I2u = q_n(3:2:2*n,:);
     I2v = q_n(4:2:2*n,:);
 end
-
 
 if grid
     er = 1e-5;
@@ -112,19 +114,38 @@ else
     p2gth = Pgth(4:6, :);
 end
 
+% Add noise
+if exist('K','var') == 0
+    fx = f; fy = f;
+    K = [fx  0 250;
+        0 fy 250;
+        0 0 1];
+else
+    fx = K(1, 1); fy = K(2, 2);
+end
+if pixel_noise > 0
+    num_p = length(I1u(1, :));
+    I1u = randn(1, num_p) * pixel_noise / fx + I1u;
+    I1v = randn(1, num_p) * pixel_noise / fy + I1v;
+    I2u = randn(1, num_p) * pixel_noise / fx + I2u;
+    I2v = randn(1, num_p) * pixel_noise / fy + I2v;
+end
+
 % 
 if use_warp
-    load(['kinect_schwarps_', int2str(frame1), '_', int2str(frame2), '.mat'], 'I1u','I1v','I2u','I2v','J21a','J21b','J21c','J21d','J12a','J12b','J12c','J12d','H21uua','H21uub','H21uva','H21uvb','H21vva','H21vvb')
-%     load(dataset, 'I1u','I1v','I2u','I2v','J21a','J21b','J21c','J21d','J12a','J12b','J12c','J12d','H21uua','H21uub','H21uva','H21uvb','H21vva','H21vvb');
-%     I1u = I1u(1, :); I1v = I1v(1, :);
+%     load(['kinect_schwarps_', int2str(frame1), '_', int2str(frame2), '.mat'], 'I1u','I1v','I2u','I2v','J21a','J21b','J21c','J21d','J12a','J12b','J12c','J12d','H21uua','H21uub','H21uva','H21uvb','H21vva','H21vvb')
+    load(dataset, 'I1u','I1v','I2u','I2v','J21a','J21b','J21c','J21d','J12a','J12b','J12c','J12d','H21uua','H21uub','H21uva','H21uvb','H21vva','H21vvb');
+    I1u = I1u(frame1, :); I1v = I1v(frame1, :);
+    I2u = I2u(frame2 - 1, :); I2v = I2v(frame2 - 1, :);
+%     I2u = qgth{2}(1, :); I2v = qgth{2}(2, :);
 %     I2u = I2u(1, :); I2v = I2v(1, :);
-%     J21a = J21a(frame2 - 1, :); J21b = J21b(frame2 - 1, :);
-%     J21c = J21c(frame2 - 1, :); J21d = J21d(frame2 - 1, :);
-%     J12a = J12a(frame2 - 1, :); J12b = J12b(frame2 - 1, :);
-%     J12c = J12c(frame2 - 1, :); J12d = J12d(frame2 - 1, :);
-%     H21uua = H21uua(frame2 - 1, :); H21uub = H21uub(frame2 - 1, :);
-%     H21uva = H21uva(frame2 - 1, :); H21uvb = H21uvb(frame2 - 1, :);
-%     H21vva = H21vva(frame2 - 1, :); H21vvb = H21vvb(frame2 - 1, :);
+    J21a = J21a(frame2 - 1, :); J21b = J21b(frame2 - 1, :);
+    J21c = J21c(frame2 - 1, :); J21d = J21d(frame2 - 1, :);
+    J12a = J12a(frame2 - 1, :); J12b = J12b(frame2 - 1, :);
+    J12c = J12c(frame2 - 1, :); J12d = J12d(frame2 - 1, :);
+    H21uua = H21uua(frame2 - 1, :); H21uub = H21uub(frame2 - 1, :);
+    H21uva = H21uva(frame2 - 1, :); H21uvb = H21uvb(frame2 - 1, :);
+    H21vva = H21vva(frame2 - 1, :); H21vvb = H21vvb(frame2 - 1, :);
 else
     par = 2e-3;
     visb = ones(2, size(I1u, 2));
@@ -162,9 +183,7 @@ degen_metric = (sqrt(sum((sigma - 1) .^ 2)) + sqrt(sum((1 ./ sigma - 1) .^ 2))) 
 %     s = (s / s(2));
 %     degen_metric(i) = norm(s - ones(3, 1));
 % end
-mask_degen = (degen_metric < degen_thre) & (degen_metric < (mean(degen_metric)- degen_std * std(degen_metric)));
-
-degen_idx = find(mask_degen);
+mask_degen = (degen_metric < degen_thre);
 
 na1_collect = [na(:, :, 1); na(:, :, 2); na(:, :, 3)];
 nb1_collect = [nb(:, :, 1); nb(:, :, 2); nb(:, :, 3)];
@@ -172,74 +191,125 @@ nb1_collect = [nb(:, :, 1); nb(:, :, 2); nb(:, :, 3)];
 na2_collect = [na_(:, :, 1); na_(:, :, 2); na_(:, :, 3)];
 nb2_collect = [nb_(:, :, 1); nb_(:, :, 2); nb_(:, :, 3)];
 
-[error_map1, index1] = min([sqrt(sum(cross(na1_collect, n1gth) .^ 2)); sqrt(sum(cross(nb1_collect, n1gth) .^ 2))]);
-[error_map2, index2] = min([sqrt(sum(cross(na2_collect, n2gth) .^ 2)); sqrt(sum(cross(nb2_collect, n2gth) .^ 2))]);
+if ~use_gth
+
+    
+    num_p = length(I1u);
+    tem1 = I1u .* na1_collect(1, :) + I1v .* na1_collect(2, :) + na1_collect(3, :);
+    tem2 = I1u .* nb1_collect(1, :) + I1v .* nb1_collect(2, :) + nb1_collect(3, :);
+    k1 = [na1_collect(1, :) ./ tem1;
+        nb1_collect(1, :) ./ tem2];
+    k2 = [na1_collect(2, :) ./ tem1;
+        nb1_collect(2, :) ./ tem2];
+
+    tem1_ = I2u .* na2_collect(1, :) + I2v .* na2_collect(2, :) + na2_collect(3, :);
+    tem2_ = I2u .* nb2_collect(1, :) + I2v .* nb2_collect(2, :) + nb2_collect(3, :);
+    k1_ = [na2_collect(1, :) ./ tem1_;
+        nb2_collect(1, :) ./ tem2_];
+    k2_ = [na2_collect(2, :) ./ tem1_;
+        nb2_collect(2, :) ./ tem2_];
+
+    tem = nan(4, num_p);
+    k1 = [tem; k1];
+    k2 = [tem; k2];
+    k1_ = [tem; k1_];
+    k2_ = [tem; k2_];
+    
+    mask = solution_selection(I1u, I1v, I2u, I2v, k1, k2, k1_, k2_, method);
+    mask_ = mask;
+    % gather k1 and k2 for both views
+    k1_all = [k1(mask)'; k1_(mask_)'];
+    k2_all = [k2(mask)'; k2_(mask_)'];
+
+    u_all = [I1u;I2u]; v_all = [I1v;I2v];
+
+    % find normals on all surfaces N= [N1;N2;N3]
+    N1 = k1_all; N2 = k2_all; N3 = 1-u_all.*k1_all-v_all.*k2_all;
+    n = sqrt(N1.^2+N2.^2+N3.^2);
+    N1 = N1./n ; N2 = N2./n; N3 = N3./n;
+
+    N = [N1(:),N2(:),N3(:)]';
+    N_res = reshape(N(:),6, num_p);
+    error_map1 = sqrt(sum(cross(N_res(1:3, :), n1gth) .^ 2));
+    error_map2 = sqrt(sum(cross(N_res(4:6, :), n2gth) .^ 2));
+else
+    [error_map1, index1] = min([sqrt(sum(cross(na1_collect, n1gth) .^ 2)); sqrt(sum(cross(nb1_collect, n1gth) .^ 2))]);
+    [error_map2, index2] = min([sqrt(sum(cross(na2_collect, n2gth) .^ 2)); sqrt(sum(cross(nb2_collect, n2gth) .^ 2))]);
+    for i = 1:length(index1)
+        if index1(i) == 1
+            N_res(1:3, i) = na1_collect(:, i);
+        else
+            N_res(1:3, i) = nb1_collect(:, i);
+        end
+
+    %     % test normal integration
+%         N_res(1:3, i) = n1gth(:, i);
+
+        if index2(i) == 1
+            N_res(4:6, i) = na2_collect(:, i);
+        else
+            N_res(4:6, i) = nb2_collect(:, i);
+        end    
+    end
+    N_res(1:3, :) = sign(N_res(3, :)) .* N_res(1:3, :);
+    N_res(4:6, :) = sign(N_res(6, :)) .* N_res(4:6, :);
+end
+
+error_map1 = asind(error_map1);
+error_map2 = asind(error_map2);
+
 
 disp('average minimum shape error of first frame, before integration')
 mean(error_map1)
 disp('average minimum shape error of second frame, before integration')
 mean(error_map2)
 
-for i = 1:length(index1)
-    if index1(i) == 1
-        N_res(1:3, i) = na1_collect(:, i);
-    else
-        N_res(1:3, i) = nb1_collect(:, i);
-    end
-    
-%     % test normal integration
-%     N_res(1:3, i) = n1gth(:, i);
-    
-    if index2(i) == 1
-        N_res(4:6, i) = na2_collect(:, i);
-    else
-        N_res(4:6, i) = nb2_collect(:, i);
-    end    
+
+if show_plot
+    figure
+    draw_surface(p1gth, 'g')
+    hold on
+    quiver3(p1gth(1, :), p1gth(2, :), p1gth(3, :), N_res(1, :), N_res(2, :), N_res(3, :), 'r')
+    % quiver3(Pgth(1, :), Pgth(2, :), Pgth(3, :), Ngth(1, :) .* sign(Ngth(3, :)), Ngth(2, :) .* sign(Ngth(3, :)), Ngth(3, :) .* sign(Ngth(3, :)), 'r')
+    axis equal
+    hold off
+    figure
+    draw_surface(p2gth, 'g')
+    hold on
+    quiver3(p2gth(1, :), p2gth(2, :), p2gth(3, :), N_res(4, :), N_res(5, :), N_res(6, :), 'r')
+    % quiver3(Pgth(4, :), Pgth(5, :), Pgth(6, :), Ngth(4, :) .* sign(Ngth(6, :)), Ngth(5, :) .* sign(Ngth(6, :)), Ngth(6, :) .* sign(Ngth(6, :)), 'r')
+    axis equal
 end
-
-N_res(1:3, :) = sign(N_res(3, :)) .* N_res(1:3, :);
-N_res(4:6, :) = sign(N_res(6, :)) .* N_res(4:6, :);
-
-figure
-draw_surface(p1gth, 'g')
-hold on
-quiver3(p1gth(1, :), p1gth(2, :), p1gth(3, :), N_res(1, :), N_res(2, :), N_res(3, :), 'r')
-% quiver3(Pgth(1, :), Pgth(2, :), Pgth(3, :), Ngth(1, :) .* sign(Ngth(3, :)), Ngth(2, :) .* sign(Ngth(3, :)), Ngth(3, :) .* sign(Ngth(3, :)), 'r')
-axis equal
-hold off
-figure
-draw_surface(p2gth, 'g')
-hold on
-quiver3(p2gth(1, :), p2gth(2, :), p2gth(3, :), N_res(4, :), N_res(5, :), N_res(6, :), 'r')
-% quiver3(Pgth(4, :), Pgth(5, :), Pgth(6, :), Ngth(4, :) .* sign(Ngth(6, :)), Ngth(5, :) .* sign(Ngth(6, :)), Ngth(6, :) .* sign(Ngth(6, :)), 'r')
-axis equal
 
 u_all = [I1u; I2u];
 v_all = [I1v; I2v];
 
-u_all(:, degen_idx) = 0;
-v_all(:, degen_idx) = 0;
-
+if degen_filter
+    degen_idx = find(mask_degen & (degen_metric < (mean(degen_metric)- degen_std * std(degen_metric))));
+    u_all(:, degen_idx) = 0;
+    v_all(:, degen_idx) = 0;
+end
 P_grid = calculate_depth(N_res,u_all,v_all,1e0);
 
 % compare with ground truth
 [P2,err_p] = compare_with_Pgth(P_grid,u_all,v_all,q_n,Pgth);
 [N,err_n] = compare_with_Ngth(P2,q_n,Ngth);
 
-figure();     
+if show_plot
+    figure();     
+    draw_surface(Pgth(1:3, :), 'g')
+    hold on
+    draw_surface(P2(1:3, :), 'r')
+    hold off
+    figure();
+    draw_surface(Pgth(4:6, :), 'g')
+    hold on
+    draw_surface(P2(4:6, :), 'r')
+    hold off
+end
 
-draw_surface(Pgth(1:3, :), 'g')
-hold on
-draw_surface(P2(1:3, :), 'r')
-hold off
-figure();
-draw_surface(Pgth(4:6, :), 'g')
-hold on
-draw_surface(P2(4:6, :), 'r')
-hold off
-
-error_map1_after = sqrt(sum(cross(Ngth(1:3, :), N(1:3, :)) .^ 2));
-error_map2_after = sqrt(sum(cross(Ngth(4:6, :), N(4:6, :)) .^ 2));
+error_map1_after = asind(sqrt(sum(cross(Ngth(1:3, :), N(1:3, :)) .^ 2)));
+error_map2_after = asind(sqrt(sum(cross(Ngth(4:6, :), N(4:6, :)) .^ 2)));
 
 disp('average minimum shape error of first frame, after integration')
 mean(error_map1_after)
@@ -249,35 +319,38 @@ mean(error_map2_after)
 mask1 = error_map1 > error_thre;
 mask2 = error_map2 > error_thre;
 
-figure
-hold off
-subplot(2,2, 1)
-imshow(im1)
-hold on
-plot(image_coord1(1, mask1), image_coord1(2, mask1), '+r')
-% plot(image_coord1(1, mask1_after), image_coord1(2, mask1_after), '+g')
-title(['normal error (reference) greater than ', num2str(error_thre)])
-subplot(2,2, 2)
-imshow(im2)
-hold on
-plot(image_coord2(1, mask2), image_coord2(2, mask2), '+r')
-% plot(image_coord2(1, mask2_after), image_coord2(2, mask2_after), '+g')
-title(['normal error greater than ', num2str(error_thre)])
+if show_im
+    im1 = imread(['kinect paper/', num2str(frame1,'%03.f'), '.bmp']);
+    im2 = imread(['kinect paper/', num2str(frame2,'%03.f'), '.bmp']);
+    figure
+    hold off
+    subplot(2,2, 1)
+    imshow(im1)
+    hold on
+    plot(image_coord1(1, mask1), image_coord1(2, mask1), '+r')
+    % plot(image_coord1(1, mask1_after), image_coord1(2, mask1_after), '+g')
+    title(['normal error (reference) greater than ', num2str(error_thre)])
+    subplot(2,2, 2)
+    imshow(im2)
+    hold on
+    plot(image_coord2(1, mask2), image_coord2(2, mask2), '+r')
+    % plot(image_coord2(1, mask2_after), image_coord2(2, mask2_after), '+g')
+    title(['normal error greater than ', num2str(error_thre)])
 
 
 
-hold off
-subplot(2,2, 3)
-imshow(im1)
-hold on
-plot(image_coord1(1, mask_degen), image_coord1(2, mask_degen), '*r')
-title(['non-degeneracy (reference) less than ', num2str(degen_thre)])
-subplot(2,2, 4)
-imshow(im2)
-hold on
-plot(image_coord2(1, mask_degen), image_coord2(2, mask_degen), '*r')
-title(['non-degeneracy less than ', num2str(degen_thre)])
-
+    hold off
+    subplot(2,2, 3)
+    imshow(im1)
+    hold on
+    plot(image_coord1(1, mask_degen), image_coord1(2, mask_degen), '*r')
+    title(['non-degeneracy (reference) less than ', num2str(degen_thre)])
+    subplot(2,2, 4)
+    imshow(im2)
+    hold on
+    plot(image_coord2(1, mask_degen), image_coord2(2, mask_degen), '*r')
+    title(['non-degeneracy less than ', num2str(degen_thre)])
+end
 
 measure_frontal1 = (N_res(1, :) .^ 2 + N_res(2, :) .^ 2) ./ N_res(3, :) .^ 2;
 measure_frontal2 = (N_res(4, :) .^ 2 + N_res(5, :) .^ 2) ./ N_res(6, :) .^ 2;
@@ -296,31 +369,33 @@ image_raw_coord2 = image_raw_coord2 ./ image_raw_coord2(3, :);
 
 mask1_frontal = measure_frontal1 < frontal_thre;
 mask2_frontal = measure_frontal2 < frontal_thre;
-figure
-hold off
-subplot(2,2, 1)
-imshow(im1)
-hold on
-plot(image_raw_coord1(1, mask1_after), image_raw_coord1(2, mask1_after), '*r')
-title(['normal error (after integration) greater than', num2str(error_thre_after)])
-subplot(2,2, 2)
-imshow(im2)
-hold on
-plot(image_raw_coord2(1, mask2_after), image_raw_coord2(2, mask2_after), '*r')
-title(['normal error (after integration) greater than', num2str(error_thre_after)])
 
-subplot(2,2, 3)
-imshow(im1)
-hold on
-plot(image_coord1(1, mask1_frontal), image_coord1(2, mask1_frontal), '*r')
-title(['frontal parallelism (reference) less than ', num2str(frontal_thre)])
-subplot(2,2, 4)
-imshow(im2)
-hold on
-plot(image_coord2(1, mask2_frontal), image_coord2(2, mask2_frontal), '*r')
-title(['frontal parallelism less than ', num2str(frontal_thre)])
+if show_im
+    figure
+    hold off
+    subplot(2,2, 1)
+    imshow(im1)
+    hold on
+    plot(image_raw_coord1(1, mask1_after), image_raw_coord1(2, mask1_after), '*r')
+    title(['normal error (after) larger than', num2str(error_thre_after)])
+    subplot(2,2, 2)
+    imshow(im2)
+    hold on
+    plot(image_raw_coord2(1, mask2_after), image_raw_coord2(2, mask2_after), '*r')
+    title(['normal error (after) larger than', num2str(error_thre_after)])
 
-
+    subplot(2,2, 3)
+    imshow(im1)
+    hold on
+    plot(image_coord1(1, mask1_frontal), image_coord1(2, mask1_frontal), '*r')
+    title(['frontal parallelism (reference) less than ', num2str(frontal_thre)])
+    subplot(2,2, 4)
+    imshow(im2)
+    hold on
+    plot(image_coord2(1, mask2_frontal), image_coord2(2, mask2_frontal), '*r')
+    title(['frontal parallelism less than ', num2str(frontal_thre)])
+end
+end
 % load('schwarp_1_40_error.mat');
 % yd = reshape(y(1:(2 * size(q_n, 2))), 2, size(q_n, 2));
 % interp_err = sum(yd .^ 2);
