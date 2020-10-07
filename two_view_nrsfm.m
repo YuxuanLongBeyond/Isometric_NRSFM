@@ -1,4 +1,4 @@
-function [error_map1, error_map2, err_n, err_p] = two_view_nrsfm(dataset, frame1, frame2, pixel_noise, choice, measure, solver, grid, grid_size, use_warp, degen_filter, use_gth, show_plot, show_im)
+function [error_map1, error_map2, err_n, err_p, degen_metric] = two_view_nrsfm(dataset, frame1, frame2, pixel_noise, choice, measure, solver, grid, grid_size, use_warp, degen_filter, use_gth, show_plot, show_im)
 f = 500; % assumed focal length
 if ~use_gth
     method = struct;
@@ -28,11 +28,11 @@ if ~use_gth
     method.ratio = 1.0; % threshold = ratio * average squared distance
 end
 
-degen_thre = 0.15;
+degen_thre = 0.10;
 degen_std = 1;
 
-error_thre = 10;
-error_thre_after = 10;
+error_thre = 20;
+error_thre_after = 20;
 frontal_thre = 0.02;
 
 dataset = ['./warps_data/', dataset];
@@ -192,8 +192,6 @@ na2_collect = [na_(:, :, 1); na_(:, :, 2); na_(:, :, 3)];
 nb2_collect = [nb_(:, :, 1); nb_(:, :, 2); nb_(:, :, 3)];
 
 if ~use_gth
-
-    
     num_p = length(I1u);
     tem1 = I1u .* na1_collect(1, :) + I1v .* na1_collect(2, :) + na1_collect(3, :);
     tem2 = I1u .* nb1_collect(1, :) + I1v .* nb1_collect(2, :) + nb1_collect(3, :);
@@ -289,7 +287,15 @@ if degen_filter
     u_all(:, degen_idx) = 0;
     v_all(:, degen_idx) = 0;
 end
-P_grid = calculate_depth(N_res,u_all,v_all,1e0);
+
+
+bending_coef1 = measure_smoothness(I1u, I1v, N_res(1:3, :));
+bending_coef2 = measure_smoothness(I2u, I2v, N_res(4:6, :));
+% bending_coef1 = 1e2;
+% bending_coef2 = 1e2;
+
+
+P_grid = calculate_depth(N_res,u_all,v_all, [bending_coef1, bending_coef2]);
 
 % compare with ground truth
 [P2,err_p] = compare_with_Pgth(P_grid,u_all,v_all,q_n,Pgth);
@@ -336,8 +342,6 @@ if show_im
     plot(image_coord2(1, mask2), image_coord2(2, mask2), '+r')
     % plot(image_coord2(1, mask2_after), image_coord2(2, mask2_after), '+g')
     title(['normal error greater than ', num2str(error_thre)])
-
-
 
     hold off
     subplot(2,2, 3)

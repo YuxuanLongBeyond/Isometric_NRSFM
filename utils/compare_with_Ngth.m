@@ -1,13 +1,14 @@
 function [N,err_n] = compare_with_Ngth(P,q,Ng)
 er = 1e-4;
-nC = 40;
+nC = 20;
+t = 1e-1;
 N = zeros(size(P));
 for i = 1: size(P,1)/3
     
     q1 = q(2*(i-1)+1:2*(i-1)+2,:);
     idx = (q1(1,:)~=0) & (q1(2,:)~=0);
-    umin=min(q1(1,idx))-0.1;umax=max(q1(1,idx))+0.1;
-    vmin=min(q1(2,idx))-0.1;vmax=max(q1(2,idx))+0.1;
+    umin=min(q1(1,idx))-t;umax=max(q1(1,idx))+t;
+    vmin=min(q1(2,idx))-t;vmax=max(q1(2,idx))+t;
     bbs = bbs_create(umin, umax, nC, vmin, vmax, nC, 3);
     coloc = bbs_coloc(bbs, q1(1,idx), q1(2,idx));
     lambdas = er*ones(nC-3, nC-3);

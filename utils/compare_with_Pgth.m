@@ -1,14 +1,14 @@
 function [P2,err_p] = compare_with_Pgth(P,u,v,q,Pg)
 er = 1e-4;
-t= 1e-3;
-nC = 40;
+t= 1e-1; % 0.1
+nC = 20;
 P2 = zeros(3*length(u(:,1)),length(q(1,:)));
 for i = 1: size(u,1)
     idx = find(u(i,:)~=0) & find(v(i,:)~=0);
     idx2 = (q(2*(i-1)+1,:)~=0) & (q(2*(i-1)+2,:)~=0);
     q1 = q(2*(i-1)+1:2*(i-1)+2,idx2);
-    umin=min(u(i,idx))-0.1;umax=max(u(i,idx))+0.1;
-    vmin=min(v(i,idx))-0.1;vmax=max(v(i,idx))+0.1;
+    umin=min([u(i,idx), q1(1, :)])-t;umax=max([u(i,idx), q1(1, :)])+t;
+    vmin=min([v(i,idx), q1(2, :)])-t;vmax=max([v(i,idx), q1(2, :)])+t;
     
     bbs = bbs_create(umin, umax, nC, vmin, vmax, nC, 3);
     coloc = bbs_coloc(bbs, u(i,idx), v(i,idx));
