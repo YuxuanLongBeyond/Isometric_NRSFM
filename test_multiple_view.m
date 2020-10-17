@@ -204,7 +204,7 @@ if strcmp(solver, 'fastDiffH')
     num_p = length(a(1, :));
     N_res = zeros(3 * num, num_p);
     [vec_W, vec_W_invt] = compute_W(I1u, I1v, I2u, I2v, a, b, c, d, t1, t2);
-    [na, nb, ~, ~] = compute_normal(vec_W, vec_W_invt);
+    [na, nb, ~, ~, sigma] = compute_normal(vec_W, vec_W_invt);
     
     err_tol = 0;
     
@@ -262,16 +262,26 @@ if strcmp(solver, 'fastDiffH')
             end
         end
 %         n = mean(col_n)'; n = n / norm(n);
-        N_res(1:3, i) = n;  
+        N_res(1:3, i) = n;
+        
+    end
+    
+%     N_res(1:3, :) = normal_refine(I1u, I1v, N_res(1:3, :));
+    
 
+%     vec_W = refine_W(vec_W_invt, N_res(1:3, :));
+
+
+    for i=1:num_p
+        n = N_res(1:3, i);
         n_(1, :) = vec_W{1, 1}(:, i) * n(1) + vec_W{1, 2}(:, i) * n(2) + vec_W{1, 3}(:, i) * n(3);
         n_(2, :) = vec_W{2, 1}(:, i) * n(1) + vec_W{2, 2}(:, i) * n(2) + vec_W{2, 3}(:, i) * n(3);
         n_(3, :) = vec_W{3, 1}(:, i) * n(1) + vec_W{3, 2}(:, i) * n(2) + vec_W{3, 3}(:, i) * n(3);
         
         n_ = n_ ./ sqrt(n_(1, :) .^ 2 + n_(2, :) .^ 2 + n_(3, :) .^ 2);
         N_res(4:end, i) = n_(:);
-        
     end
+
     u_all = [I1u(1,:);I2u]; v_all = [I1v(1,:);I2v];
 end
 
@@ -333,9 +343,13 @@ if strcmp(solver, 'polyH')
 end
 toc
 
+% for i = 1:(pairs_num + 1)
+%     coef(i) = measure_smoothness(u_all(i, :), v_all(i, :), N_res((3 * (i - 1) + 1):(3 * i), :));
+% end
+coef = ones(1, pairs_num + 1);
 
 % Integrate normals to find depth
-P_grid=calculate_depth(N_res,u_all,v_all,1e0);
+P_grid=calculate_depth(N_res,u_all,v_all,coef);
 
 % compare with ground truth
 [P2,err_p] = compare_with_Pgth(P_grid,u_all,v_all,q_n,Pgth);

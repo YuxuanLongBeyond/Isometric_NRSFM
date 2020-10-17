@@ -19,10 +19,10 @@ addpath(genpath('l1magic'));
 % dataset = 'cat_nongrid.mat';
 % dataset = 'tshirt_nongrid.mat';
 
-dataset = 'Kinect_paper.mat';
+% dataset = 'Kinect_paper.mat';
 % dataset = 'rug_trun.mat';
 % dataset = 'cat.mat';
-% dataset = 'tshirt.mat';
+dataset = 'tshirt.mat';
 
 % dataset = 'warps_plane1.mat';
 % dataset = 'warps_plane2.mat';
@@ -83,5 +83,3 @@ disp('Average depth error of first frame')
 mean(error_p1)
 disp('Average depth error of second frame')
 mean(error_p2)
-
-

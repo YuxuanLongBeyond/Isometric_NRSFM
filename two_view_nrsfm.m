@@ -156,13 +156,20 @@ image_coord1 = image_coord1 ./ image_coord1(3, :);
 image_coord2 = K * [I2u; I2v; ones(1, length(I2u))];
 image_coord2 = image_coord2 ./ image_coord2(3, :);
 
-% coeff of k1       % coeff of k2        % constant term
-T1_12_k1 = -J21c;   T1_12_k2 = -J21d;    T1_12_c = (J12a.*H21uva + J12c.*H21uvb);%(H21vvb./J21d)/2;
-T2_12_k1 = -J21a;   T2_12_k2 = -J21b;    T2_12_c = (J12b.*H21uva + J12d.*H21uvb);%(H21uub./J21b)/2;
+% coeff of k1       % coeff of k2      
+T1_12_k1 = -J21c;   T1_12_k2 = -J21d;  
+T2_12_k1 = -J21a;   T2_12_k2 = -J21b;  
 
 % k1b = -T2_12 = a*k1 + b*k2 + t1;
 % k2b = -T1_12 = c*k1 + d*k2 + t2;
-a = -T2_12_k1; b = -T2_12_k2; c = -T1_12_k1; d = -T1_12_k2; t1 = -T2_12_c; t2 = -T1_12_c;
+a = -T2_12_k1; b = -T2_12_k2; c = -T1_12_k1; d = -T1_12_k2; 
+
+t1_1 = -(J12b.*H21uva + J12d.*H21uvb); t2_1 = -(J12a.*H21uva + J12c.*H21uvb);
+
+t1_2 = -(J12a.*H21uua + J12c.*H21uub) / 2; t2_2 = -(J12b.*H21vva + J12d.*H21vvb) / 2;
+
+t1 = (t1_1 + t1_2) / 2;
+t2 = (t2_1 + t2_2) / 2;
 
 [vec_W, vec_W_invt] = compute_W(repmat(I1u, pairs_num, 1), repmat(I1v, pairs_num, 1), I2u, I2v, a, b, c, d, t1, t2);
 [na, nb, na_, nb_, sigma] = compute_normal(vec_W, vec_W_invt);
@@ -214,7 +221,16 @@ if ~use_gth
     k2_ = [tem; k2_];
     
     mask = solution_selection(I1u, I1v, I2u, I2v, k1, k2, k1_, k2_, method);
-    mask_ = mask;
+    
+    if method.method == 0
+        mask_ = solution_selection(I2u, I2v, I1u, I1v, k1_, k2_, k1, k2, method);
+    else
+        mask_ = mask;
+    end
+    
+%     mask_ = mask;
+    
+    
     % gather k1 and k2 for both views
     k1_all = [k1(mask)'; k1_(mask_)'];
     k2_all = [k2(mask)'; k2_(mask_)'];
@@ -256,11 +272,11 @@ end
 error_map1 = asind(error_map1);
 error_map2 = asind(error_map2);
 
-
-disp('average minimum shape error of first frame, before integration')
-mean(error_map1)
-disp('average minimum shape error of second frame, before integration')
-mean(error_map2)
+% 
+% disp('average minimum shape error of first frame, before integration')
+% mean(error_map1)
+% disp('average minimum shape error of second frame, before integration')
+% mean(error_map2)
 
 
 if show_plot
@@ -317,10 +333,10 @@ end
 error_map1_after = asind(sqrt(sum(cross(Ngth(1:3, :), N(1:3, :)) .^ 2)));
 error_map2_after = asind(sqrt(sum(cross(Ngth(4:6, :), N(4:6, :)) .^ 2)));
 
-disp('average minimum shape error of first frame, after integration')
-mean(error_map1_after)
-disp('average minimum shape error of second frame, after integration')
-mean(error_map2_after)
+% disp('average minimum shape error of first frame, after integration')
+% mean(error_map1_after)
+% disp('average minimum shape error of second frame, after integration')
+% mean(error_map2_after)
 
 mask1 = error_map1 > error_thre;
 mask2 = error_map2 > error_thre;

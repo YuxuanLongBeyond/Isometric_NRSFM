@@ -2,7 +2,7 @@
 clear all;close all;
 
 % add libraries
-addpath(genpath('BBS'));
+addpath(genpath('BBS_NOOMP'));
 addpath(genpath('tbxmanager'));
 tbxmanager restorepath
 
@@ -14,10 +14,12 @@ addpath(genpath('sparseinv'));
 addpath(genpath('utils'));
 addpath(genpath('l1magic'));
 
-dataset = 'Kinect_paper_nongrid.mat';
+% dataset = 'Kinect_paper_nongrid.mat';
+
+% dataset = 'Kinect_paper.mat';
 % dataset = 'rug_trun.mat';
 % dataset = 'cat.mat';
-% dataset = 'tshirt.mat';
+dataset = 'tshirt.mat';
 
 % dataset = 'warps_plane1.mat';
 % dataset = 'warps_plane2.mat';
@@ -34,9 +36,9 @@ use_warp = 1; % if warp is already conntained in the data
 pixel_noise = 0;
 f = 500;  % default focal length
 
-show_plot = 1; % flag for showing the recovered shapes
+show_plot = 0; % flag for showing the recovered shapes
 
-grid = 0;
+grid = 1;
 if strcmp(dataset(1:5), 'warps')
     grid = 0;
 end
@@ -79,10 +81,10 @@ err_d_collect_all = mean([mean(error_metric(1, :)), error_metric(2, :)]);
 
 
 %% test multiple view methods
-solver = 'infP';
+% solver = 'infP';
 % solver = 'iso';
 % solver = 'polyH';
-% solver = 'fastDiffH';
+solver = 'fastDiffH';
 
 % views_num = 10; % should be greater than 2
 views_num = 'all';
