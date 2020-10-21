@@ -1,4 +1,4 @@
-function [error_map1, error_map2, err_n, err_p, degen_metric] = two_view_nrsfm(dataset, frame1, frame2, pixel_noise, choice, measure, solver, grid, grid_size, use_warp, degen_filter, use_gth, show_plot, show_im)
+function [error_map1, error_map2, err_n, err_p, degen_metric] = two_view_nrsfm(dataset, frame1, frame2, pixel_noise, choice, measure, solver, grid, grid_size, use_warp, degen_filter, use_gth, show_plot, show_im, Varol)
 f = 500; % assumed focal length
 if ~use_gth
     method = struct;
@@ -199,53 +199,75 @@ na2_collect = [na_(:, :, 1); na_(:, :, 2); na_(:, :, 3)];
 nb2_collect = [nb_(:, :, 1); nb_(:, :, 2); nb_(:, :, 3)];
 
 if ~use_gth
-    num_p = length(I1u);
-    tem1 = I1u .* na1_collect(1, :) + I1v .* na1_collect(2, :) + na1_collect(3, :);
-    tem2 = I1u .* nb1_collect(1, :) + I1v .* nb1_collect(2, :) + nb1_collect(3, :);
-    k1 = [na1_collect(1, :) ./ tem1;
-        nb1_collect(1, :) ./ tem2];
-    k2 = [na1_collect(2, :) ./ tem1;
-        nb1_collect(2, :) ./ tem2];
-
-    tem1_ = I2u .* na2_collect(1, :) + I2v .* na2_collect(2, :) + na2_collect(3, :);
-    tem2_ = I2u .* nb2_collect(1, :) + I2v .* nb2_collect(2, :) + nb2_collect(3, :);
-    k1_ = [na2_collect(1, :) ./ tem1_;
-        nb2_collect(1, :) ./ tem2_];
-    k2_ = [na2_collect(2, :) ./ tem1_;
-        nb2_collect(2, :) ./ tem2_];
-
-    tem = nan(4, num_p);
-    k1 = [tem; k1];
-    k2 = [tem; k2];
-    k1_ = [tem; k1_];
-    k2_ = [tem; k2_];
     
-    mask = solution_selection(I1u, I1v, I2u, I2v, k1, k2, k1_, k2_, method);
+    if Varol
     
-    if method.method == 0
-        mask_ = solution_selection(I2u, I2v, I1u, I1v, k1_, k2_, k1, k2, method);
+        n=sqrt(length(I1u));
+        [edges]=EdgeList(n,n,2);
+    %     [n1, n2] = pairSolveforNormalsVarol(Hmo,m1);
+        n1s(2).n = na1_collect;
+        n2s(2).n = nb1_collect;
+        n1f = selectNormalsVarol([I1u; I1v], edges, n1s, n2s);
+
+        n1s_(2).n = na2_collect;
+        n2s_(2).n = nb2_collect;
+        n2f = selectNormalsVarol([I2u; I2v], edges, n1s_, n2s_);
+
+        N_res(1:3, :) = n1f(2).n;
+        N_res(4:6, :) = n2f(2).n;
+
+        error_map1 = sqrt(sum(cross(N_res(1:3, :), n1gth) .^ 2));
+        error_map2 = sqrt(sum(cross(N_res(4:6, :), n2gth) .^ 2));
     else
-        mask_ = mask;
+    
+        num_p = length(I1u);
+        tem1 = I1u .* na1_collect(1, :) + I1v .* na1_collect(2, :) + na1_collect(3, :);
+        tem2 = I1u .* nb1_collect(1, :) + I1v .* nb1_collect(2, :) + nb1_collect(3, :);
+        k1 = [na1_collect(1, :) ./ tem1;
+            nb1_collect(1, :) ./ tem2];
+        k2 = [na1_collect(2, :) ./ tem1;
+            nb1_collect(2, :) ./ tem2];
+
+        tem1_ = I2u .* na2_collect(1, :) + I2v .* na2_collect(2, :) + na2_collect(3, :);
+        tem2_ = I2u .* nb2_collect(1, :) + I2v .* nb2_collect(2, :) + nb2_collect(3, :);
+        k1_ = [na2_collect(1, :) ./ tem1_;
+            nb2_collect(1, :) ./ tem2_];
+        k2_ = [na2_collect(2, :) ./ tem1_;
+            nb2_collect(2, :) ./ tem2_];
+
+        tem = nan(4, num_p);
+        k1 = [tem; k1];
+        k2 = [tem; k2];
+        k1_ = [tem; k1_];
+        k2_ = [tem; k2_];
+
+        mask = solution_selection(I1u, I1v, I2u, I2v, k1, k2, k1_, k2_, method);
+
+        if method.method == 0
+            mask_ = solution_selection(I2u, I2v, I1u, I1v, k1_, k2_, k1, k2, method);
+        else
+            mask_ = mask;
+        end
+
+    %     mask_ = mask;
+
+
+        % gather k1 and k2 for both views
+        k1_all = [k1(mask)'; k1_(mask_)'];
+        k2_all = [k2(mask)'; k2_(mask_)'];
+
+        u_all = [I1u;I2u]; v_all = [I1v;I2v];
+
+        % find normals on all surfaces N= [N1;N2;N3]
+        N1 = k1_all; N2 = k2_all; N3 = 1-u_all.*k1_all-v_all.*k2_all;
+        n = sqrt(N1.^2+N2.^2+N3.^2);
+        N1 = N1./n ; N2 = N2./n; N3 = N3./n;
+
+        N = [N1(:),N2(:),N3(:)]';
+        N_res = reshape(N(:),6, num_p);
+        error_map1 = sqrt(sum(cross(N_res(1:3, :), n1gth) .^ 2));
+        error_map2 = sqrt(sum(cross(N_res(4:6, :), n2gth) .^ 2));
     end
-    
-%     mask_ = mask;
-    
-    
-    % gather k1 and k2 for both views
-    k1_all = [k1(mask)'; k1_(mask_)'];
-    k2_all = [k2(mask)'; k2_(mask_)'];
-
-    u_all = [I1u;I2u]; v_all = [I1v;I2v];
-
-    % find normals on all surfaces N= [N1;N2;N3]
-    N1 = k1_all; N2 = k2_all; N3 = 1-u_all.*k1_all-v_all.*k2_all;
-    n = sqrt(N1.^2+N2.^2+N3.^2);
-    N1 = N1./n ; N2 = N2./n; N3 = N3./n;
-
-    N = [N1(:),N2(:),N3(:)]';
-    N_res = reshape(N(:),6, num_p);
-    error_map1 = sqrt(sum(cross(N_res(1:3, :), n1gth) .^ 2));
-    error_map2 = sqrt(sum(cross(N_res(4:6, :), n2gth) .^ 2));
 else
     [error_map1, index1] = min([sqrt(sum(cross(na1_collect, n1gth) .^ 2)); sqrt(sum(cross(nb1_collect, n1gth) .^ 2))]);
     [error_map2, index2] = min([sqrt(sum(cross(na2_collect, n2gth) .^ 2)); sqrt(sum(cross(nb2_collect, n2gth) .^ 2))]);

@@ -96,8 +96,6 @@ if method.method == 3
         end
         
     end
-    
-    
 end
 
 if method.method == 1

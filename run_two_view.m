@@ -22,14 +22,14 @@ addpath(genpath('l1magic'));
 % dataset = 'Kinect_paper.mat';
 % dataset = 'rug_trun.mat';
 % dataset = 'cat.mat';
-dataset = 'tshirt.mat';
+% dataset = 'tshirt.mat';
 
 % dataset = 'warps_plane1.mat';
 % dataset = 'warps_plane2.mat';
 
 % dataset = 'warps_plane_trial11.mat';
 
-% dataset = 'warps_cylinder1.mat';
+dataset = 'warps_cylinder1.mat';
 % dataset = 'warps_cylinder2.mat';
 % dataset = 'warps_cylinder3.mat';
 
@@ -49,6 +49,7 @@ measure = 'ln'; % least norm or least change of depth
 solver = 'qp';
 
 use_gth = 0;
+Varol = 0;
 
 use_warp = 1;
 degen_filter = 0;
@@ -63,7 +64,7 @@ show_im = 0;
 frame1 = 1;
 load(['./warps_data/', dataset], 'qgth'); frame_num = length(qgth);
 for frame2 = 2:frame_num
-    [error_map1, error_map2, err_n, err_p, degen_metric] = two_view_nrsfm(dataset, frame1, frame2, pixel_noise, choice, measure, solver, grid, grid_size, use_warp, degen_filter, use_gth, show_plot, show_im);
+    [error_map1, error_map2, err_n, err_p, degen_metric] = two_view_nrsfm(dataset, frame1, frame2, pixel_noise, choice, measure, solver, grid, grid_size, use_warp, degen_filter, use_gth, show_plot, show_im, Varol);
     error_n1_raw(frame2 - 1) = mean(error_map1); error_n2_raw(frame2 - 1) = mean(error_map2);
     error_n1(frame2 - 1) = mean(err_n(1, :)); error_n2(frame2 - 1) = mean(err_n(2, :));
     error_p1(frame2 - 1) = mean(err_p(1, :)); error_p2(frame2 - 1) = mean(err_p(2, :));

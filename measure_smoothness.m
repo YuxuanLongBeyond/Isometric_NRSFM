@@ -1,12 +1,13 @@
 function coef = measure_smoothness(u, v, N)
 n = length(u);
 
-kNN = 10;
+kNN = 10; % number of nearest neighbours
 kNN_global = n - 1;
 
 F = [u; v];
 
 % compute distance maps for image coordinates
+% and construct local neighbourhood graph and fully connected graph
 W = zeros(n, n);
 W_full = zeros(n, n);
 dist_map = zeros(n, n);
@@ -25,11 +26,7 @@ local_coef = trace(N * L * N') / n / kNN;
 L_full = diag(sum(W_full)) - W_full;
 global_coef = trace(N * L_full * N') / n / kNN_global;
 
-% W_full = ones(n, n) - eye(n);
-% global_coef = trace(N * (diag(sum(W_full)) - W_full) * N') / n / (n - 1);
-
 % coef = exp(100 * local_coef / global_coef);
-
 coef = exp(10 * local_coef / global_coef);
     
 end
