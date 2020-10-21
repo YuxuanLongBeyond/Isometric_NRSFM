@@ -28,7 +28,7 @@ if ~use_gth
     method.ratio = 1.0; % threshold = ratio * average squared distance
 end
 
-degen_thre = 0.10;
+degen_thre = 0.05;
 degen_std = 1;
 
 error_thre = 20;

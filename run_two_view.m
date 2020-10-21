@@ -24,12 +24,15 @@ addpath(genpath('l1magic'));
 % dataset = 'cat.mat';
 % dataset = 'tshirt.mat';
 
+dataset = 'mat_corrected.mat';
+% dataset = 'rug_corrected.mat';
+
 % dataset = 'warps_plane1.mat';
 % dataset = 'warps_plane2.mat';
 
 % dataset = 'warps_plane_trial11.mat';
 
-dataset = 'warps_cylinder1.mat';
+% dataset = 'warps_cylinder1.mat';
 % dataset = 'warps_cylinder2.mat';
 % dataset = 'warps_cylinder3.mat';
 
@@ -52,7 +55,7 @@ use_gth = 0;
 Varol = 0;
 
 use_warp = 1;
-degen_filter = 0;
+degen_filter = 0;  % interpolate the degenerate region
 
 pixel_noise = 0;
 grid = 1;
