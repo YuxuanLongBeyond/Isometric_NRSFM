@@ -23,7 +23,7 @@ lam3 = -a2 / 3 - (S + T) / 2 + sqrt(3) / 2 * (S - T) * (1i);
 sigma(:, :, 1) = lam1;
 sigma(:, :, 2) = lam2;
 sigma(:, :, 3) = lam3;
-sigma = sqrt(sigma ./ lam2);
+sigma = sqrt(sigma);
 
 S = cell(3);
 S{1, 1} = M{1, 1} ./ lam2 - 1; S{1, 2} = M{1, 2} ./ lam2; S{1, 3} = M{1, 3} ./ lam2;

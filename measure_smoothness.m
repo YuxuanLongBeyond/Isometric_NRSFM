@@ -26,7 +26,7 @@ local_coef = trace(N * L * N') / n / kNN;
 L_full = diag(sum(W_full)) - W_full;
 global_coef = trace(N * L_full * N') / n / kNN_global;
 
-% coef = exp(100 * local_coef / global_coef);
+% coef = exp(15 * local_coef / global_coef);
 coef = exp(10 * local_coef / global_coef);
     
 end

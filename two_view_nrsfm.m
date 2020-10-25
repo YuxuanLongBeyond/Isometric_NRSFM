@@ -174,7 +174,13 @@ t2 = (t2_1 + t2_2) / 2;
 [vec_W, vec_W_invt] = compute_W(repmat(I1u, pairs_num, 1), repmat(I1v, pairs_num, 1), I2u, I2v, a, b, c, d, t1, t2);
 [na, nb, na_, nb_, sigma] = compute_normal(vec_W, vec_W_invt);
 
-sigma = [sigma(:, :, 1); sigma(:, :, 2); sigma(:, :, 3)];
+h31 = vec_W_invt{3, 1} ./ sigma(:, :, 2);
+h32 = vec_W_invt{3, 2} ./ sigma(:, :, 2);
+h33 = vec_W_invt{3, 3} ./ sigma(:, :, 2);
+depth_ratio = h31 .* I1u + h32 .* I1v + h33;
+
+
+sigma = [sigma(:, :, 1); sigma(:, :, 2); sigma(:, :, 3)] ./ sigma(:, :, 2);
 degen_metric = (sqrt(sum((sigma - 1) .^ 2)) + sqrt(sum((1 ./ sigma - 1) .^ 2))) / 2;
 % degen_tem = degen_metric;
 % h11 = vec_W{1, 1}; h12 = vec_W{2, 1}; h13 = vec_W{3, 1};
@@ -329,11 +335,23 @@ end
 
 bending_coef1 = measure_smoothness(I1u, I1v, N_res(1:3, :));
 bending_coef2 = measure_smoothness(I2u, I2v, N_res(4:6, :));
+
+% bending_coef1 = measure_piecewise_coef(I1u, I1v, N_res(1:3, :));
+% bending_coef2 = measure_piecewise_coef(I2u, I2v, N_res(4:6, :));
+
 % bending_coef1 = 1e2;
 % bending_coef2 = 1e2;
 
 
 P_grid = calculate_depth(N_res,u_all,v_all, [bending_coef1, bending_coef2]);
+
+% x = [I1u; I1v; ones(1, size(I1u, 2))];
+% y = [I2u; I2v; ones(1, size(I1u, 2))];
+% P_grid(4:6, :) = P_grid(1, :) ./ x(1, :) .* depth_ratio .* y; 
+% P_grid(1:3, :) = P_grid(4, :) ./ y(1, :) ./ depth_ratio .* x; 
+
+% figure
+% draw_surface(P_grid(4:6, :), 'r')
 
 % compare with ground truth
 [P2,err_p] = compare_with_Pgth(P_grid,u_all,v_all,q_n,Pgth);
@@ -344,11 +362,13 @@ if show_plot
     draw_surface(Pgth(1:3, :), 'g')
     hold on
     draw_surface(P2(1:3, :), 'r')
+    axis equal
     hold off
     figure();
     draw_surface(Pgth(4:6, :), 'g')
     hold on
     draw_surface(P2(4:6, :), 'r')
+    axis equal
     hold off
 end
 
