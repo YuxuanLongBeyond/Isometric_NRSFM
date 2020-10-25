@@ -61,12 +61,12 @@ pixel_noise = 0;
 grid = 1;
 grid_size = 20;
 
-show_plot = 1;
+show_plot = 0;
 show_im = 0;
 
 frame1 = 1;
 load(['./warps_data/', dataset], 'qgth'); frame_num = length(qgth);
-for frame2 = 100 % 2:frame_num
+for frame2 = 2:frame_num
     [error_map1, error_map2, err_n, err_p, degen_metric] = two_view_nrsfm(dataset, frame1, frame2, pixel_noise, choice, measure, solver, grid, grid_size, use_warp, degen_filter, use_gth, show_plot, show_im, Varol);
     error_n1_raw(frame2 - 1) = mean(error_map1); error_n2_raw(frame2 - 1) = mean(error_map2);
     error_n1(frame2 - 1) = mean(err_n(1, :)); error_n2(frame2 - 1) = mean(err_n(2, :));

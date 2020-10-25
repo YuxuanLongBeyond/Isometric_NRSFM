@@ -344,6 +344,7 @@ bending_coef2 = measure_smoothness(I2u, I2v, N_res(4:6, :));
 
 
 P_grid = calculate_depth(N_res,u_all,v_all, [bending_coef1, bending_coef2]);
+% P_grid = piecewise_integrate(N_res,u_all,v_all, [bending_coef1, bending_coef2], 2);
 
 % x = [I1u; I1v; ones(1, size(I1u, 2))];
 % y = [I2u; I2v; ones(1, size(I1u, 2))];
