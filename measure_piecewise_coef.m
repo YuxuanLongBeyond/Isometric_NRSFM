@@ -38,6 +38,6 @@ global_coef = trace(N * L_full * N') / n / kNN_global;
 
 % coef = exp(100 * local_coef / global_coef);
 % coef = 100 * (smoothness / global_coef);
-coef = (300 * smoothness / global_coef);
+coef = (500 * smoothness / global_coef);
     
 end

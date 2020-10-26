@@ -20,8 +20,8 @@ addpath(genpath('l1magic'));
 % dataset = 'tshirt_nongrid.mat';
 
 % dataset = 'Kinect_paper.mat';
-% dataset = 'rug_trun.mat';
-dataset = 'cat.mat';
+dataset = 'rug_trun.mat';
+% dataset = 'cat.mat';
 % dataset = 'tshirt.mat';
 
 % dataset = 'mat_corrected.mat';
