@@ -345,13 +345,9 @@ bending_coef2 = measure_piecewise_coef(I2u, I2v, N_res(4:6, :));
 % bending_coef1 = 1e2;
 % bending_coef2 = 1e2;
 
-<<<<<<< HEAD
 tic
-P_grid = calculate_depth(N_res,u_all,v_all, [bending_coef1, bending_coef2]);
-=======
 P_grid = calculate_depth(N_res,u_all,v_all, {bending_coef1, bending_coef2});
 % P_grid = calculate_depth(N_res,u_all,v_all, [bending_coef1, bending_coef2]);
->>>>>>> 1d048d5cca141f147452917a16c860679ede5feb
 % P_grid = piecewise_integrate(N_res,u_all,v_all, [bending_coef1, bending_coef2], 2);
 
 % x = [I1u; I1v; ones(1, size(I1u, 2))];
