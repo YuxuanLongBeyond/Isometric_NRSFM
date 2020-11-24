@@ -19,6 +19,11 @@ addpath(genpath('l1magic'));
 % dataset = 'cat_nongrid.mat';
 % dataset = 'tshirt_nongrid.mat';
 
+% dataset = 'blue_warp1_bbs.mat';
+% dataset = 'blue_warp2_bbs.mat';
+% dataset = 'blue_warp3_bbs.mat';
+
+
 dataset = 'Kinect_paper.mat';
 % dataset = 'rug_trun.mat';
 % dataset = 'cat.mat';

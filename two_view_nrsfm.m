@@ -342,7 +342,7 @@ bending_coef2 = measure_smoothness(I2u, I2v, N_res(4:6, :));
 % bending_coef1 = 1e2;
 % bending_coef2 = 1e2;
 
-
+tic
 P_grid = calculate_depth(N_res,u_all,v_all, [bending_coef1, bending_coef2]);
 % P_grid = piecewise_integrate(N_res,u_all,v_all, [bending_coef1, bending_coef2], 2);
 
@@ -357,7 +357,7 @@ P_grid = calculate_depth(N_res,u_all,v_all, [bending_coef1, bending_coef2]);
 % compare with ground truth
 [P2,err_p] = compare_with_Pgth(P_grid,u_all,v_all,q_n,Pgth);
 [N,err_n] = compare_with_Ngth(P2,q_n,Ngth);
-
+toc
 if show_plot
     figure();     
     draw_surface(Pgth(1:3, :), 'g')

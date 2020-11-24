@@ -24,7 +24,11 @@ for i=1:size(u,1)
 
     lambdas = par(i) .*ones(nC-3, nC-3);
     bendingd = bbs_bending(bbsd, lambdas);
-    [ctrlpts3Dn]=ShapeFromNormals(bbsd,colocd,bendingd,[u(i,idx);v(i,idx);ones(1,length(u(i,idx)))],N_res(3*(i-1)+1:3*(i-1)+3,idx));
+%     [ctrlpts3Dn]=ShapeFromNormals(bbsd,colocd,bendingd,[u(i,idx);v(i,idx);ones(1,length(u(i,idx)))],N_res(3*(i-1)+1:3*(i-1)+3,idx));
+    [ctrlpts3Dn]=new_SfN(bbsd,colocd,bendingd,[u(i,idx);v(i,idx);ones(1,length(u(i,idx)))],N_res(3*(i-1)+1:3*(i-1)+3,idx));
     mu=bbs_eval(bbsd, ctrlpts3Dn,u(i,idx)',v(i,idx)',0,0);
+
+    mu = sign(mu) .* mu;
+    
     P_grid(3*(i-1)+1:3*(i-1)+3,idx) = [u(i,idx);v(i,idx);ones(1,length(u(i,idx)))].*[mu;mu;mu];
 end
