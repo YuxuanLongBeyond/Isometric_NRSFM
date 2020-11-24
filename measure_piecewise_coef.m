@@ -6,8 +6,6 @@ kNN_global = n - 1;
 
 F = [u; v];
 
-
-
 % compute distance maps for image coordinates
 % and construct local neighbourhood graph and fully connected graph
 W = zeros(n, n);
@@ -21,15 +19,25 @@ for i = 1:n
     W(i, i) = 0;
     W_full(i, i) = 0;
     
-    
-    smoothness(i) = norm((N(:, W(:, i) == 1) - N(:, i)), 'fro') ^ 2 / kNN;
-    
+    dot_diff(:, i) = acosd(N(:, i)' * N(:, W(:, i) == 1));
 end
+
+thre = median(median(dot_diff));
+
+for i = 1:n
+    mask = dot_diff(:, i) < thre;
+    smoothness(i) = sum(2 - 2 * cosd(dot_diff(mask, i)));
+    if sum(mask) > 0
+        smoothness(i) = smoothness(i) / sum(mask);
+    end
+end
+smoothness(smoothness == 0) = max(smoothness);
 
 L_full = diag(sum(W_full)) - W_full;
 global_coef = trace(N * L_full * N') / n / kNN_global;
 
 % coef = exp(100 * local_coef / global_coef);
-coef = 100 * (smoothness / global_coef);
+% coef = 100 * (smoothness / global_coef);
+coef = (500 * smoothness / global_coef);
     
 end
