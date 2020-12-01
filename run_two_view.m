@@ -9,7 +9,6 @@ addpath('SfTv0_3');
 addpath(genpath('gloptipoly3'));
 addpath(genpath('SeDuMi_1_3'));
 addpath(genpath('schwarps'));
-addpath(genpath('sparseinv'));
 addpath(genpath('utils'));
 addpath(genpath('l1magic'));
 
@@ -24,10 +23,13 @@ addpath(genpath('l1magic'));
 % dataset = 'blue_warp3_bbs.mat';
 
 
-dataset = 'Kinect_paper.mat';
+% addpath(genpath('YALMIP-master'))
+% addpath('C:\gurobi903\win64\matlab')
+% 
+% dataset = 'Kinect_paper.mat';
 % dataset = 'rug_trun.mat';
 % dataset = 'cat.mat';
-% dataset = 'tshirt.mat';
+dataset = 'tshirt.mat';
 
 % dataset = 'mat_corrected.mat';
 % dataset = 'rug_corrected.mat';

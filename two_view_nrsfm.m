@@ -333,21 +333,26 @@ if degen_filter
 end
 
 
-% bending_coef1 = measure_smoothness(I1u, I1v, N_res(1:3, :));
-% bending_coef2 = measure_smoothness(I2u, I2v, N_res(4:6, :));
+bending_coef1 = measure_smoothness(I1u, I1v, N_res(1:3, :));
+bending_coef2 = measure_smoothness(I2u, I2v, N_res(4:6, :));
 N_res(1:3, :) = N_res(1:3, :) .* sign(N_res(3, :));
 N_res(4:6, :) = N_res(4:6, :) .* sign(N_res(6, :));
 
 
-bending_coef1 = measure_piecewise_coef(I1u, I1v, N_res(1:3, :));
-bending_coef2 = measure_piecewise_coef(I2u, I2v, N_res(4:6, :));
+% local_measure1 = measure_piecewise_coef(I1u, I1v, N_res(1:3, :));
+% local_measure2 = measure_piecewise_coef(I2u, I2v, N_res(4:6, :));
 
 % bending_coef1 = 1e2;
 % bending_coef2 = 1e2;
 
 tic
-P_grid = calculate_depth(N_res,u_all,v_all, {bending_coef1, bending_coef2});
-% P_grid = calculate_depth(N_res,u_all,v_all, [bending_coef1, bending_coef2]);
+% weight1 = local_measure1;
+% weight2 = local_measure2;
+weight1 = degen_metric;
+weight2 = degen_metric;
+
+% P_grid = calculate_depth(N_res,u_all,v_all, {bending_coef1, bending_coef2});
+P_grid = calculate_depth(N_res,u_all,v_all, [bending_coef1, bending_coef2], {weight1, weight2});
 % P_grid = piecewise_integrate(N_res,u_all,v_all, [bending_coef1, bending_coef2], 2);
 
 % x = [I1u; I1v; ones(1, size(I1u, 2))];
