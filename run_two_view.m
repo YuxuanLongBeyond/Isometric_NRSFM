@@ -1,7 +1,7 @@
 clear all;close all;
 
 % add libraries
-addpath(genpath('BBS'));
+addpath(genpath('BBS_NOOMP'));
 addpath(genpath('tbxmanager'));
 tbxmanager restorepath
 
