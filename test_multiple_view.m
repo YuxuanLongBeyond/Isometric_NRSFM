@@ -343,13 +343,24 @@ if strcmp(solver, 'polyH')
 end
 toc
 
-% for i = 1:(pairs_num + 1)
-%     coef(i) = measure_smoothness(u_all(i, :), v_all(i, :), N_res((3 * (i - 1) + 1):(3 * i), :));
-% end
-coef = ones(1, pairs_num + 1);
+weights = cell(1, pairs_num + 1);
+
+for i = 1:(pairs_num + 1)
+    weights{i} = ones(1, size(N_res, 2));
+end
+
+if strcmp(solver, 'infP') || strcmp(solver, 'iso')
+    coef = ones(1, pairs_num + 1);
+else
+    for i = 1:(pairs_num + 1)
+        coef(i) = measure_smoothness(u_all(i, :), v_all(i, :), N_res((3 * (i - 1) + 1):(3 * i), :));
+    end
+end
+
+% coef = ones(1, pairs_num + 1);
 
 % Integrate normals to find depth
-P_grid=calculate_depth(N_res,u_all,v_all,coef);
+P_grid=calculate_depth(N_res,u_all,v_all,coef, weights);
 
 % compare with ground truth
 [P2,err_p] = compare_with_Pgth(P_grid,u_all,v_all,q_n,Pgth);

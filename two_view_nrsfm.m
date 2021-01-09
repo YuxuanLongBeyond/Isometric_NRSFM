@@ -345,11 +345,17 @@ N_res(4:6, :) = N_res(4:6, :) .* sign(N_res(6, :));
 % bending_coef1 = 1e2;
 % bending_coef2 = 1e2;
 
-tic
+% tic
 % weight1 = local_measure1;
 % weight2 = local_measure2;
+
+
 weight1 = degen_metric;
-weight2 = degen_metric;
+weight1(weight1 ~= real(weight1)) = 0;
+weight2 = weight1;
+
+% weight1 = ones(1, size(N_res, 2));
+% weight2 = weight1;
 
 % P_grid = calculate_depth(N_res,u_all,v_all, {bending_coef1, bending_coef2});
 P_grid = calculate_depth(N_res,u_all,v_all, [bending_coef1, bending_coef2], {weight1, weight2});
@@ -366,20 +372,24 @@ P_grid = calculate_depth(N_res,u_all,v_all, [bending_coef1, bending_coef2], {wei
 % compare with ground truth
 [P2,err_p] = compare_with_Pgth(P_grid,u_all,v_all,q_n,Pgth);
 [N,err_n] = compare_with_Ngth(P2,q_n,Ngth);
-toc
+% toc
 if show_plot
     figure();     
-    draw_surface(Pgth(1:3, :), 'g')
-    hold on
+%     draw_surface(Pgth(1:3, :), 'g')
+%     hold on
     draw_surface(P2(1:3, :), 'r')
     axis equal
-    hold off
+    set(gca,'XColor', 'none','YColor','none')
+    set(gca,'visible','off')
+%     hold off
     figure();
-    draw_surface(Pgth(4:6, :), 'g')
-    hold on
+%     draw_surface(Pgth(4:6, :), 'g')
+%     hold on
     draw_surface(P2(4:6, :), 'r')
     axis equal
-    hold off
+    set(gca,'XColor', 'none','YColor','none')
+    set(gca,'visible','off')
+%     hold off
 end
 
 error_map1_after = asind(sqrt(sum(cross(Ngth(1:3, :), N(1:3, :)) .^ 2)));

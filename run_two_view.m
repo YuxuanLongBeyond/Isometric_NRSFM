@@ -1,7 +1,7 @@
 clear all;close all;
 
 % add libraries
-addpath(genpath('BBS_NOOMP'));
+addpath(genpath('BBS'));
 addpath(genpath('tbxmanager'));
 tbxmanager restorepath
 
@@ -26,13 +26,11 @@ addpath(genpath('l1magic'));
 % addpath(genpath('YALMIP-master'))
 % addpath('C:\gurobi903\win64\matlab')
 % 
-% dataset = 'Kinect_paper.mat';
-% dataset = 'rug_trun.mat';
-% dataset = 'cat.mat';
-dataset = 'tshirt.mat';
-
-% dataset = 'mat_corrected.mat';
+dataset = 'Kinect_paper.mat';
 % dataset = 'rug_corrected.mat';
+% dataset = 'mat_corrected.mat';
+% dataset = 'tshirt.mat';
+
 
 % dataset = 'warps_plane1.mat';
 % dataset = 'warps_plane2.mat';
@@ -61,7 +59,7 @@ solver = 'qp';
 use_gth = 0;
 Varol = 0;
 
-use_warp = 1;
+use_warp = 0;
 degen_filter = 0;  % interpolate the degenerate region
 
 pixel_noise = 0;
@@ -73,6 +71,7 @@ show_im = 0;
 
 frame1 = 1;
 load(['./warps_data/', dataset], 'qgth'); frame_num = length(qgth);
+tic
 for frame2 = 2:frame_num
     [error_map1, error_map2, err_n, err_p, degen_metric] = two_view_nrsfm(dataset, frame1, frame2, pixel_noise, choice, measure, solver, grid, grid_size, use_warp, degen_filter, use_gth, show_plot, show_im, Varol);
     error_n1_raw(frame2 - 1) = mean(error_map1); error_n2_raw(frame2 - 1) = mean(error_map2);
@@ -81,6 +80,7 @@ for frame2 = 2:frame_num
     
     degen_collect(frame2 - 1, :) = degen_metric;
 end
+
 disp('Raw average shape error of first frame')
 mean(error_n1_raw)
 disp('Raw average shape error of second frame')
@@ -94,3 +94,8 @@ disp('Average depth error of first frame')
 mean(error_p1)
 disp('Average depth error of second frame')
 mean(error_p2)
+toc
+
+
+disp((mean(error_n1) + mean(error_n2) * (frame_num - 1)) / frame_num)
+disp((mean(error_p1) + mean(error_p2) * (frame_num - 1)) / frame_num)
